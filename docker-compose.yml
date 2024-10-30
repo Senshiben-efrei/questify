@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rpg_life_api
+    restart: always
+    ports:
+      - "${API_PORT}:8000"
+    volumes:
+      - ./api/src:/app/src
+      - ./api/logs:/app/logs
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rpg_network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: rpg_life_client
+    restart: always
+    ports:
+      - "${CLIENT_PORT}:3000"
+    volumes:
+      - ./client/src:/app/src
+      - ./client/public:/app/public
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+    depends_on:
+      - api
+    networks:
+      - rpg_network
+
+  db:
+    image: postgres:15-alpine
+    container_name: rpg_life_db
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/backups:/backups
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rpg_network
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_DATA_VOLUME}
+
+networks:
+  rpg_network:
+    name: ${NETWORK_NAME}
+    driver: bridge

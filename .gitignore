@@ -1,0 +1,24 @@
+# Environment variables
+.env
+
+# Logs
+api/logs/*
+!api/logs/.gitkeep
+
+# Database
+postgres/backups/*
+!postgres/backups/.gitkeep
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE files
+.idea/
+.vscode/
+
+# System files
+.DS_Store 
