@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import or_, and_
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
@@ -17,15 +18,14 @@ async def create_task(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    # Verify that either project_id or area_id is provided, but not both
-    if (task_data.project_id is None and task_data.area_id is None) or \
-       (task_data.project_id is not None and task_data.area_id is not None):
+    # Verify that project_id and area_id are not both provided
+    if task_data.project_id is not None and task_data.area_id is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either project_id or area_id must be provided, but not both"
+            detail="A task cannot be linked to both a project and an area"
         )
     
-    # Verify ownership
+    # If project_id is provided, verify it belongs to user
     if task_data.project_id:
         project = db.query(Project).join(Area).filter(
             Project.id == task_data.project_id,
@@ -36,7 +36,9 @@ async def create_task(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Project not found or doesn't belong to user"
             )
-    else:
+    
+    # If area_id is provided, verify it belongs to user
+    if task_data.area_id:
         area = db.query(Area).filter(
             Area.id == task_data.area_id,
             Area.user_id == current_user.id
@@ -48,22 +50,11 @@ async def create_task(
             )
     
     # Create task
-    db_task = Task(**task_data.dict())
-    db.add(db_task)
+    task = Task(**task_data.dict())
+    db.add(task)
     db.commit()
-    db.refresh(db_task)
-    
-    # Create initial task instance if task is recurring
-    if db_task.is_recurring:
-        task_instance = TaskInstance(
-            task_id=db_task.id,
-            status="pending",
-            due_date=datetime.now(timezone.utc)  # You might want to calculate this based on frequency
-        )
-        db.add(task_instance)
-        db.commit()
-    
-    return db_task
+    db.refresh(task)
+    return task
 
 @router.get("/", response_model=List[TaskSchema])
 async def get_tasks(
@@ -73,23 +64,28 @@ async def get_tasks(
     current_user = Depends(get_current_user)
 ):
     # Base query: get tasks from projects/areas belonging to user
-    query = db.query(Task)
-    
+    query = db.query(Task).outerjoin(
+        Project,  # First join with Project
+        Task.project_id == Project.id
+    ).outerjoin(
+        Area,
+        or_(
+            Task.area_id == Area.id,  # Direct area link
+            Project.area_id == Area.id  # Area through project
+        )
+    ).filter(
+        or_(
+            Area.user_id == current_user.id,
+            Area.user_id == None  # Include tasks without area/project
+        )
+    )
+
     if project_id:
-        # Filter by project and verify ownership
-        query = query.join(Project).join(Area).filter(
-            Task.project_id == project_id,
-            Area.user_id == current_user.id
-        )
+        # Filter by project
+        query = query.filter(Task.project_id == project_id)
     elif area_id:
-        # Filter by area and verify ownership
-        query = query.join(Area, Task.area_id == Area.id).filter(
-            Task.area_id == area_id,
-            Area.user_id == current_user.id
-        )
-    else:
-        # Get all tasks belonging to user
-        query = query.outerjoin(Project).outerjoin(Area).filter(Area.user_id == current_user.id)
+        # Filter by area (direct tasks only)
+        query = query.filter(Task.area_id == area_id)
     
     return query.all()
 
@@ -111,25 +107,36 @@ async def get_task(
         )
     return task
 
-@router.put("/{task_id}", response_model=TaskSchema)
+@router.put("/{task_id}/", response_model=TaskSchema)
 async def update_task(
     task_id: UUID,
     task_data: TaskCreate,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    # Verify task exists and belongs to user
-    task = db.query(Task).outerjoin(Project).outerjoin(Area).filter(
+    # First, verify task exists and belongs to user
+    task = db.query(Task).outerjoin(Project).outerjoin(Area, or_(
+        Task.area_id == Area.id,  # Direct area link
+        Project.area_id == Area.id  # Area through project
+    )).filter(
         Task.id == task_id,
         Area.user_id == current_user.id
     ).first()
+    
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
     
-    # Verify new project/area belongs to user if being updated
+    # Verify that project_id and area_id are not both provided
+    if task_data.project_id is not None and task_data.area_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A task cannot be linked to both a project and an area"
+        )
+    
+    # Verify ownership of new project/area if provided
     if task_data.project_id:
         project = db.query(Project).join(Area).filter(
             Project.id == task_data.project_id,
@@ -138,7 +145,7 @@ async def update_task(
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="New project not found or doesn't belong to user"
+                detail="Project not found or doesn't belong to user"
             )
     elif task_data.area_id:
         area = db.query(Area).filter(
@@ -148,36 +155,59 @@ async def update_task(
         if not area:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="New area not found or doesn't belong to user"
+                detail="Area not found or doesn't belong to user"
             )
     
-    # Update task
-    for key, value in task_data.dict().items():
-        setattr(task, key, value)
+    # Update task fields
+    task.name = task_data.name
+    task.description = task_data.description
+    task.is_recurring = task_data.is_recurring
+    task.frequency = task_data.frequency if task_data.is_recurring else None
+    task.project_id = task_data.project_id
+    task.area_id = task_data.area_id
     
-    db.commit()
-    db.refresh(task)
-    return task
+    try:
+        db.commit()
+        db.refresh(task)
+        return task
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
-@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{task_id}/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
     task_id: UUID,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    task = db.query(Task).outerjoin(Project).outerjoin(Area).filter(
+    # Use the same join logic as the update endpoint to handle both direct and indirect area links
+    task = db.query(Task).outerjoin(Project).outerjoin(Area, or_(
+        Task.area_id == Area.id,  # Direct area link
+        Project.area_id == Area.id  # Area through project
+    )).filter(
         Task.id == task_id,
         Area.user_id == current_user.id
     ).first()
+
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
     
-    db.delete(task)
-    db.commit()
-    return None 
+    try:
+        db.delete(task)
+        db.commit()
+        return None
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 # Add these new endpoints for task instances
 @router.post("/{task_id}/instances", response_model=TaskInstanceSchema)

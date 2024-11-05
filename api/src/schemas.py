@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, UUID4
 
 # User schemas
 class UserBase(BaseModel):
@@ -62,13 +62,11 @@ class TaskBase(BaseModel):
     frequency: Optional[str] = None
 
 class TaskCreate(TaskBase):
-    project_id: Optional[UUID] = None
-    area_id: Optional[UUID] = None
+    project_id: Optional[UUID4] = None
+    area_id: Optional[UUID4] = None
 
-class Task(TaskBase):
-    id: UUID
-    project_id: Optional[UUID]
-    area_id: Optional[UUID]
+class Task(TaskCreate):
+    id: UUID4
     created_at: datetime
     updated_at: datetime
 
@@ -83,11 +81,11 @@ class TaskInstanceBase(BaseModel):
     completion_date: Optional[datetime] = None
 
 class TaskInstanceCreate(TaskInstanceBase):
-    task_id: UUID
+    task_id: UUID4
 
 class TaskInstance(TaskInstanceBase):
-    id: UUID
-    task_id: UUID
+    id: UUID4
+    task_id: UUID4
     created_at: datetime
     updated_at: datetime
 

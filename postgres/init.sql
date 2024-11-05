@@ -42,11 +42,7 @@ CREATE TABLE tasks (
     is_recurring BOOLEAN DEFAULT false,
     frequency VARCHAR(50), -- daily, weekly, custom
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT task_parent_check CHECK (
-        (project_id IS NOT NULL AND area_id IS NULL) OR
-        (project_id IS NULL AND area_id IS NOT NULL)
-    )
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Task instances table

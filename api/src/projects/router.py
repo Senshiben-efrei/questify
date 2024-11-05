@@ -67,7 +67,7 @@ async def get_project(
         )
     return project
 
-@router.put("/{project_id}", response_model=ProjectSchema)
+@router.put("/{project_id}/", response_model=ProjectSchema)
 async def update_project(
     project_id: UUID,
     project_data: ProjectCreate,
@@ -79,33 +79,42 @@ async def update_project(
         Project.id == project_id,
         Area.user_id == current_user.id
     ).first()
+    
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
     
-    # Verify new area belongs to user if area_id is being updated
-    if project_data.area_id != project.area_id:
-        area = db.query(Area).filter(
-            Area.id == project_data.area_id,
-            Area.user_id == current_user.id
-        ).first()
-        if not area:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="New area not found or doesn't belong to user"
-            )
+    # Verify new area belongs to user
+    area = db.query(Area).filter(
+        Area.id == project_data.area_id,
+        Area.user_id == current_user.id
+    ).first()
     
-    # Update project
-    for key, value in project_data.dict().items():
-        setattr(project, key, value)
+    if not area:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Area not found or doesn't belong to user"
+        )
     
-    db.commit()
-    db.refresh(project)
-    return project
+    # Update project fields
+    project.name = project_data.name
+    project.description = project_data.description
+    project.area_id = project_data.area_id
+    
+    try:
+        db.commit()
+        db.refresh(project)
+        return project
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{project_id}/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     project_id: UUID,
     db: Session = Depends(get_db),
