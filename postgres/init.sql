@@ -32,17 +32,53 @@ CREATE TABLE projects (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create enum types
+CREATE TYPE task_type AS ENUM ('STANDALONE', 'PLACEHOLDER', 'SUB_TASK');
+CREATE TYPE evaluation_method AS ENUM ('YES_NO', 'NUMERIC');
+
 -- Tasks table
 CREATE TABLE tasks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     description TEXT,
+    
+    -- Task type and evaluation
+    task_type task_type NOT NULL,
+    evaluation_method evaluation_method,
+    target_value FLOAT,
+    
+    -- Timing and scheduling
+    execution_time INTEGER,  -- in minutes
+    start_date TIMESTAMP WITH TIME ZONE,
+    end_date TIMESTAMP WITH TIME ZONE,
+    
+    -- Recurrence
+    is_recurring BOOLEAN DEFAULT false,
+    frequency VARCHAR(50),
+    
+    -- Relations
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
     area_id UUID REFERENCES areas(id) ON DELETE CASCADE,
-    is_recurring BOOLEAN DEFAULT false,
-    frequency VARCHAR(50), -- daily, weekly, custom
+    
+    -- Queue for placeholder tasks
+    queue JSONB DEFAULT '{}',
+    
+    -- Timestamps
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT check_project_or_area CHECK (NOT (project_id IS NOT NULL AND area_id IS NOT NULL)),
+    CONSTRAINT check_placeholder_queue CHECK (
+        (task_type != 'PLACEHOLDER') OR (task_type = 'PLACEHOLDER' AND queue IS NOT NULL)
+    ),
+    CONSTRAINT check_sub_task_timing CHECK (
+        (task_type != 'SUB_TASK') OR 
+        (task_type = 'SUB_TASK' AND execution_time IS NULL AND start_date IS NULL AND end_date IS NULL)
+    ),
+    CONSTRAINT check_numeric_target CHECK (
+        (evaluation_method != 'NUMERIC') OR (evaluation_method = 'NUMERIC' AND target_value IS NOT NULL)
+    )
 );
 
 -- Task instances table

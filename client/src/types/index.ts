@@ -17,16 +17,92 @@ export interface Project {
   updated_at: string;
 }
 
+// Enums for task types and evaluation methods
+export enum TaskType {
+  STANDALONE = "STANDALONE",
+  PLACEHOLDER = "PLACEHOLDER",
+  SUB_TASK = "SUB_TASK"
+}
+
+export enum EvaluationMethod {
+  YES_NO = "YES_NO",
+  NUMERIC = "NUMERIC"
+}
+
+// Queue related types
+export enum QueueItemType {
+  SUB_TASK = "SUB_TASK",
+  COOLDOWN = "COOLDOWN"
+}
+
+export interface QueueItem {
+  id: string;
+  type: QueueItemType;
+  position: number;
+  sub_task_id?: string;  // For sub-task references only
+}
+
+export interface TaskQueue {
+  items: QueueItem[];
+  rotation_type: "sequential";
+}
+
+// Base task interface
 export interface Task {
   id: string;
   name: string;
   description: string | null;
-  project_id: string | null;
-  area_id: string | null;
+  task_type: TaskType;
+  evaluation_method: EvaluationMethod | null;
+  target_value: number | null;
+  execution_time: number | null;  // in minutes
+  start_date: string | null;
+  end_date: string | null;
   is_recurring: boolean;
   frequency: string | null;
+  project_id: string | null;
+  area_id: string | null;
+  queue: {
+    sub_tasks: Array<{ id: string; position: number; completed: boolean }>;
+    rotation_type: string;
+  } | {
+    items: QueueItem[];
+    rotation_type: "sequential";
+  } | null;
   created_at: string;
   updated_at: string;
+}
+
+// Task creation interfaces
+export interface TaskBaseCreate {
+  name: string;
+  description?: string;
+  is_recurring?: boolean;
+  frequency?: string;
+}
+
+export interface SubTaskCreate extends TaskBaseCreate {
+  evaluation_method: EvaluationMethod;
+  target_value?: number;
+  project_id?: string;
+  area_id?: string;
+}
+
+export interface PlaceholderTaskCreate extends TaskBaseCreate {
+  execution_time?: number;
+  start_date?: string;
+  end_date?: string;
+  queue?: TaskQueue;
+}
+
+export interface StandaloneTaskCreate extends TaskBaseCreate {
+  evaluation_method: EvaluationMethod;
+  target_value?: number;
+  execution_time?: number;
+  start_date?: string;
+  end_date?: string;
+  project_id?: string;
+  area_id?: string;
 }
 
 export interface TaskInstance {

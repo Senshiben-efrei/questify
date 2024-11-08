@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Area, Project, Task } from '../types';
+import { Area, Project, Task, TaskType, EvaluationMethod, QueueItem, QueueItemType } from '../types';
 import AddAreaModal from '../components/Areas/AddAreaModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
@@ -15,13 +15,21 @@ import EditTaskModal from '../components/Tasks/EditTaskModal';
 const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
   const tags = [];
   
+  // Task Type Tag
+  tags.push({
+    label: `type: ${task.task_type}`,
+    color: 'bg-blue-100 text-blue-800',
+    type: 'type'
+  });
+
+  // Project/Area Tags
   if (task.project_id) {
     const project = projects.find(p => p.id === task.project_id);
     if (project) {
       const area = areas.find(a => a.id === project.area_id);
       tags.push({
         label: `project: ${project.name}`,
-        color: 'bg-blue-100 text-blue-800',
+        color: 'bg-green-100 text-green-800',
         type: 'project'
       });
       if (area) {
@@ -43,11 +51,21 @@ const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
     }
   }
 
+  // Evaluation Method Tag
+  if (task.evaluation_method) {
+    tags.push({
+      label: `evaluation: ${task.evaluation_method}${task.target_value ? ` (target: ${task.target_value})` : ''}`,
+      color: 'bg-yellow-100 text-yellow-800',
+      type: 'evaluation'
+    });
+  }
+
+  // Recurrence Tag
   if (task.is_recurring) {
     tags.push({
-      label: `frequency: ${task.frequency}`,
-      color: 'bg-green-100 text-green-800',
-      type: 'frequency'
+      label: `recurring: ${task.frequency}`,
+      color: 'bg-pink-100 text-pink-800',
+      type: 'recurring'
     });
   }
 
@@ -264,19 +282,11 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleAddTask = async (data: {
-    name: string;
-    description: string;
-    is_recurring: boolean;
-    frequency: string | null;
-    project_id?: string | null;
-    area_id?: string | null;
-  }) => {
+  const handleAddTask = async (data: { taskData: any, endpoint: string }) => {
     try {
-      // Create the task data without any data manipulation
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/tasks/`,
-        data,  // Send the data as is, without modification
+        `${process.env.REACT_APP_API_URL}/tasks/${data.endpoint}/`,
+        data.taskData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -285,6 +295,7 @@ const Dashboard: React.FC = () => {
         }
       );
       
+      // Add the new task to the state
       setTasks(prev => [...prev, response.data]);
     } catch (err: any) {
       throw err;
@@ -301,7 +312,7 @@ const Dashboard: React.FC = () => {
   }) => {
     try {
       const response = await axios.put(
-        `${process.env.REACT_APP_API_URL}/tasks/${id}/`,
+        `${process.env.REACT_APP_API_URL}/tasks/${id}`,
         data,
         {
           headers: {
@@ -339,6 +350,9 @@ const Dashboard: React.FC = () => {
       setError(err.response?.data?.detail || 'Failed to delete task');
     }
   };
+
+  // Add placeholderTasks filter before the return statement
+  const placeholderTasks = tasks.filter(task => task.task_type === TaskType.PLACEHOLDER);
 
   if (loading) {
     return (
@@ -478,9 +492,59 @@ const Dashboard: React.FC = () => {
                 className="p-4 border-b border-gray-200 last:border-b-0"
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">{task.name}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900">{task.name}</h3>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setTaskToEdit(task)}
+                          className="p-2 text-gray-400 hover:text-primary-500 transition-colors"
+                        >
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => setTaskToDelete(task)}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
                     <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                    
+                    {/* Timing Information */}
+                    {(task.execution_time || task.start_date || task.end_date) && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        {task.execution_time && (
+                          <span className="mr-4">Duration: {task.execution_time} minutes</span>
+                        )}
+                        {task.start_date && (
+                          <span className="mr-4">
+                            Start: {new Date(task.start_date).toLocaleString()}
+                          </span>
+                        )}
+                        {task.end_date && (
+                          <span>
+                            End: {new Date(task.end_date).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Queue Information for Placeholder Tasks */}
+                    {task.task_type === TaskType.PLACEHOLDER && task.queue && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <span>
+                          Sub-tasks: {
+                            'sub_tasks' in task.queue 
+                              ? task.queue.sub_tasks.length 
+                              : task.queue.items.filter(item => item.type === QueueItemType.SUB_TASK).length
+                          }
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Tags */}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {getTaskTags(task, areas, projects).map((tag, index) => (
                         <span
@@ -491,20 +555,6 @@ const Dashboard: React.FC = () => {
                         </span>
                       ))}
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setTaskToEdit(task)}
-                      className="p-2 text-gray-400 hover:text-primary-500 transition-colors"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => setTaskToDelete(task)}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -557,6 +607,7 @@ const Dashboard: React.FC = () => {
         onSubmit={handleAddTask}
         areas={areas}
         projects={projects}
+        tasks={tasks}
       />
 
       <EditTaskModal
@@ -566,6 +617,7 @@ const Dashboard: React.FC = () => {
         task={taskToEdit}
         areas={areas}
         projects={projects}
+        tasks={tasks}
       />
 
       <ConfirmationModal
