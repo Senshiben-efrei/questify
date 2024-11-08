@@ -96,7 +96,22 @@ class Task(Base):
         
         # Ensure placeholder tasks have a queue
         CheckConstraint(
-            "(task_type != 'PLACEHOLDER') OR (task_type = 'PLACEHOLDER' AND queue IS NOT NULL)",
+            "(task_type != 'PLACEHOLDER') OR (task_type = 'PLACEHOLDER' AND queue IS NOT NULL AND "
+            "jsonb_typeof(queue->'iterations') = 'array' AND "
+            "jsonb_array_length(queue->'iterations') > 0 AND "
+            "ALL ("
+                "SELECT jsonb_typeof(item->'type') = 'string' AND "
+                "("
+                    "(item->>'type' = 'SUB_TASK' AND "
+                    "jsonb_typeof(item->'sub_task_id') = 'string' AND "
+                    "jsonb_typeof(item->'execution_time') = 'string') OR "
+                    "(item->>'type' = 'COOLDOWN' AND "
+                    "jsonb_typeof(item->'duration') = 'string' AND "
+                    "jsonb_typeof(item->'description') = 'string')"
+                ")"
+                "FROM jsonb_array_elements((queue->'iterations'->>'items')::jsonb) item"
+            ")"
+            ")",
             name='check_placeholder_queue'
         ),
         

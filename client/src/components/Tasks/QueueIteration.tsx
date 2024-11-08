@@ -1,17 +1,22 @@
 import React from 'react';
-import { Droppable, Draggable, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
-import { Task, QueueSubTask } from '../../types';
-import { XMarkIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
+import { 
+  Task, 
+  QueueItem, 
+  QueueItemType 
+} from '../../types/index';
+import { XMarkIcon, ArrowsUpDownIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface QueueIterationProps {
   id: string;
   position: number;
-  items: QueueSubTask[];
+  items: QueueItem[];
   frequency: string;
   availableSubTasks: Task[];
-  onUpdateSubTask: (subTaskIndex: number, updates: Partial<QueueSubTask>) => void;
-  onRemoveSubTask: (subTaskIndex: number) => void;
+  onUpdateQueueItem: (itemIndex: number, updates: Partial<QueueItem>) => void;
+  onRemoveQueueItem: (itemIndex: number) => void;
   onAddSubTask: () => void;
+  onAddCooldown: () => void;
   onRemoveIteration: () => void;
 }
 
@@ -21,9 +26,10 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
   items,
   frequency,
   availableSubTasks,
-  onUpdateSubTask,
-  onRemoveSubTask,
+  onUpdateQueueItem,
+  onRemoveQueueItem,
   onAddSubTask,
+  onAddCooldown,
   onRemoveIteration
 }) => {
   return (
@@ -43,7 +49,7 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
       </div>
 
       <Droppable droppableId={`${id}-items`}>
-        {(provided: DroppableProvided) => (
+        {(provided) => (
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
@@ -55,7 +61,7 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
                 draggableId={item.id}
                 index={index}
               >
-                {(provided: DraggableProvided) => (
+                {(provided) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
@@ -70,29 +76,49 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
 
                     <span className="text-gray-500 font-medium">#{index + 1}</span>
 
-                    <select
-                      value={item.sub_task_id}
-                      onChange={(e) => onUpdateSubTask(index, { sub_task_id: e.target.value })}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                    >
-                      <option value="">Select a sub-task</option>
-                      {availableSubTasks.map(subTask => (
-                        <option key={subTask.id} value={subTask.id}>
-                          {subTask.name}
-                        </option>
-                      ))}
-                    </select>
+                    {item.type === QueueItemType.SUB_TASK ? (
+                      <>
+                        <select
+                          value={(item as any).sub_task_id}
+                          onChange={(e) => onUpdateQueueItem(index, { sub_task_id: e.target.value })}
+                          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                        >
+                          <option value="">Select a sub-task</option>
+                          {availableSubTasks.map(subTask => (
+                            <option key={subTask.id} value={subTask.id}>
+                              {subTask.name}
+                            </option>
+                          ))}
+                        </select>
 
-                    <input
-                      type="time"
-                      value={item.execution_time}
-                      onChange={(e) => onUpdateSubTask(index, { execution_time: e.target.value })}
-                      className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                    />
+                        <input
+                          type="time"
+                          value={(item as any).execution_time}
+                          onChange={(e) => onUpdateQueueItem(index, { execution_time: e.target.value })}
+                          className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          value={(item as any).description || ''}
+                          onChange={(e) => onUpdateQueueItem(index, { description: e.target.value })}
+                          placeholder="Rest Day Description"
+                          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                        />
+                        <input
+                          type="time"
+                          value={(item as any).duration}
+                          onChange={(e) => onUpdateQueueItem(index, { duration: e.target.value })}
+                          className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                        />
+                      </>
+                    )}
 
                     <button
                       type="button"
-                      onClick={() => onRemoveSubTask(index)}
+                      onClick={() => onRemoveQueueItem(index)}
                       className="text-gray-400 hover:text-red-500"
                     >
                       <XMarkIcon className="h-5 w-5" />
@@ -106,17 +132,28 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
         )}
       </Droppable>
 
-      <button
-        type="button"
-        onClick={onAddSubTask}
-        className="mt-4 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-      >
-        Add Sub-Task
-      </button>
+      <div className="mt-4 flex space-x-2">
+        <button
+          type="button"
+          onClick={onAddSubTask}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" />
+          Add Sub-Task
+        </button>
+        <button
+          type="button"
+          onClick={onAddCooldown}
+          className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" />
+          Add Rest Day
+        </button>
+      </div>
 
       {items.length === 0 && (
         <div className="text-center text-gray-500 py-4">
-          No sub-tasks in this {frequency === 'daily' ? 'day' : frequency === 'weekly' ? 'week' : 'month'}. Add some to get started.
+          No items in this {frequency === 'daily' ? 'day' : frequency === 'weekly' ? 'week' : 'month'}. Add some to get started.
         </div>
       )}
     </div>

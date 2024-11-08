@@ -38,13 +38,24 @@ export enum QueueItemType {
 export interface QueueSubTask {
   id: string;
   sub_task_id: string;
-  execution_time: string;  // HH:MM format
+  execution_time: string;
 }
+
+export interface QueueCooldown {
+  id: string;
+  duration: string;  // Format: HH:mm
+  description?: string;
+}
+
+export type QueueItem = {
+  id: string;
+  type: QueueItemType;
+} & (QueueSubTask | QueueCooldown);
 
 export interface QueueIteration {
   id: string;
   position: number;
-  items: QueueSubTask[];
+  items: QueueItem[];
 }
 
 export interface TaskQueue {

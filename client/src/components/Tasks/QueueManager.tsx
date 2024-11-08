@@ -1,6 +1,11 @@
 import React from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { Task, QueueSubTask, QueueIteration } from '../../types';
+import { 
+  Task, 
+  QueueItem, 
+  QueueIteration, 
+  QueueItemType 
+} from '../../types/index';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import QueueIterationComponent from './QueueIteration';
 
@@ -37,24 +42,36 @@ const QueueManager: React.FC<QueueManagerProps> = ({
     const newIterations = [...iterations];
     newIterations[iterationIndex].items.push({
       id: crypto.randomUUID(),
+      type: QueueItemType.SUB_TASK,
       sub_task_id: '',
       execution_time: '00:00'
     });
     onIterationsUpdate(newIterations);
   };
 
-  const updateSubTask = (iterationIndex: number, subTaskIndex: number, updates: Partial<QueueSubTask>) => {
+  const addCooldown = (iterationIndex: number) => {
     const newIterations = [...iterations];
-    newIterations[iterationIndex].items[subTaskIndex] = {
-      ...newIterations[iterationIndex].items[subTaskIndex],
+    newIterations[iterationIndex].items.push({
+      id: crypto.randomUUID(),
+      type: QueueItemType.COOLDOWN,
+      duration: '24:00',
+      description: 'Rest Day'
+    });
+    onIterationsUpdate(newIterations);
+  };
+
+  const updateQueueItem = (iterationIndex: number, itemIndex: number, updates: Partial<QueueItem>) => {
+    const newIterations = [...iterations];
+    newIterations[iterationIndex].items[itemIndex] = {
+      ...newIterations[iterationIndex].items[itemIndex],
       ...updates
     };
     onIterationsUpdate(newIterations);
   };
 
-  const removeSubTask = (iterationIndex: number, subTaskIndex: number) => {
+  const removeQueueItem = (iterationIndex: number, itemIndex: number) => {
     const newIterations = [...iterations];
-    newIterations[iterationIndex].items = newIterations[iterationIndex].items.filter((_, i) => i !== subTaskIndex);
+    newIterations[iterationIndex].items = newIterations[iterationIndex].items.filter((_, i) => i !== itemIndex);
     onIterationsUpdate(newIterations);
   };
 
@@ -87,9 +104,10 @@ const QueueManager: React.FC<QueueManagerProps> = ({
             items={iteration.items}
             frequency={frequency}
             availableSubTasks={availableSubTasks}
-            onUpdateSubTask={(subTaskIndex, updates) => updateSubTask(index, subTaskIndex, updates)}
-            onRemoveSubTask={(subTaskIndex) => removeSubTask(index, subTaskIndex)}
+            onUpdateQueueItem={(itemIndex, updates) => updateQueueItem(index, itemIndex, updates)}
+            onRemoveQueueItem={(itemIndex) => removeQueueItem(index, itemIndex)}
             onAddSubTask={() => addSubTask(index)}
+            onAddCooldown={() => addCooldown(index)}
             onRemoveIteration={() => removeIteration(index)}
           />
         ))}

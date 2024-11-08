@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
-import { Area, Project, Task, TaskType, EvaluationMethod, QueueSubTask, QueueIteration } from '../../types';
+import { Area, Project, Task, TaskType, EvaluationMethod, QueueSubTask, QueueIteration, QueueItemType } from '../../types/index';
 import QueueManager from './QueueManager';
 
 interface EditTaskModalProps {
@@ -85,6 +85,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
           position: 0,
           items: oldQueue.sub_tasks.map(subTask => ({
             id: crypto.randomUUID(),
+            type: QueueItemType.SUB_TASK,
             sub_task_id: subTask.id,
             execution_time: '00:00'  // Default time
           }))

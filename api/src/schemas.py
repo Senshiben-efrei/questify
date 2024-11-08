@@ -86,21 +86,40 @@ class SubTaskCreate(TaskBase):
         return v
 
 # Placeholder Task Schema
-class QueueItem(BaseModel):
-    id: str
-    type: str  # "SUB_TASK" or "COOLDOWN"
-    position: int
-    sub_task_id: Optional[str] = None  # For sub-task references
+class QueueItemType(str, Enum):
+    SUB_TASK = "SUB_TASK"
+    COOLDOWN = "COOLDOWN"
 
 class QueueSubTask(BaseModel):
     id: str
+    type: QueueItemType = QueueItemType.SUB_TASK
     sub_task_id: str
-    execution_time: str  # HH:MM format
+    execution_time: str
+
+class QueueCooldown(BaseModel):
+    id: str
+    type: QueueItemType = QueueItemType.COOLDOWN
+    duration: str
+    description: str
 
 class QueueIteration(BaseModel):
     id: str
     position: int
-    items: List[QueueSubTask]
+    items: List[Union[QueueSubTask, QueueCooldown]]
+
+    @validator('items')
+    def validate_items(cls, v):
+        for item in v:
+            if isinstance(item, dict):
+                if item.get('type') == QueueItemType.SUB_TASK:
+                    if not all(k in item for k in ['id', 'sub_task_id', 'execution_time']):
+                        raise ValueError('SUB_TASK items must have id, sub_task_id, and execution_time')
+                elif item.get('type') == QueueItemType.COOLDOWN:
+                    if not all(k in item for k in ['id', 'duration', 'description']):
+                        raise ValueError('COOLDOWN items must have id, duration, and description')
+                else:
+                    raise ValueError('Invalid queue item type')
+        return v
 
 class TaskQueue(BaseModel):
     iterations: List[QueueIteration]
@@ -110,7 +129,7 @@ class PlaceholderTaskCreate(TaskBase):
     execution_time: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    queue: TaskQueue
+    queue: Optional[TaskQueue] = None
 
     @validator('end_date')
     def validate_dates(cls, v, values):
