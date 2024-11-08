@@ -1,164 +1,108 @@
 import React from 'react';
-import { PlusIcon, XMarkIcon, ClockIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
-import { Task, QueueItem, QueueItemType } from '../../types';
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { Task, QueueSubTask, QueueIteration } from '../../types';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import QueueIterationComponent from './QueueIteration';
 
 interface QueueManagerProps {
-  queue: QueueItem[];
-  onQueueUpdate: (queue: QueueItem[]) => void;
+  iterations: QueueIteration[];
+  onIterationsUpdate: (iterations: QueueIteration[]) => void;
   availableSubTasks: Task[];
   frequency?: string;
 }
 
 const QueueManager: React.FC<QueueManagerProps> = ({
-  queue,
-  onQueueUpdate,
+  iterations,
+  onIterationsUpdate,
   availableSubTasks,
   frequency = 'daily'
 }) => {
-  const addSubTask = () => {
-    const newQueue = [...queue];
-    newQueue.push({
+  const addIteration = () => {
+    const newIterations = [...iterations];
+    newIterations.push({
       id: crypto.randomUUID(),
-      type: QueueItemType.SUB_TASK,
-      position: queue.length,
-      sub_task_id: ''
+      position: iterations.length,
+      items: []
     });
-    onQueueUpdate(newQueue);
+    onIterationsUpdate(newIterations);
   };
 
-  const addCooldown = () => {
-    const newQueue = [...queue];
-    newQueue.push({
+  const removeIteration = (index: number) => {
+    const newIterations = iterations.filter((_, i) => i !== index);
+    newIterations.forEach((iteration, i) => iteration.position = i);
+    onIterationsUpdate(newIterations);
+  };
+
+  const addSubTask = (iterationIndex: number) => {
+    const newIterations = [...iterations];
+    newIterations[iterationIndex].items.push({
       id: crypto.randomUUID(),
-      type: QueueItemType.COOLDOWN,
-      position: queue.length
+      sub_task_id: '',
+      execution_time: '00:00'
     });
-    onQueueUpdate(newQueue);
+    onIterationsUpdate(newIterations);
   };
 
-  const updateQueueItem = (index: number, updates: Partial<QueueItem>) => {
-    const newQueue = [...queue];
-    newQueue[index] = { ...newQueue[index], ...updates };
-    onQueueUpdate(newQueue);
+  const updateSubTask = (iterationIndex: number, subTaskIndex: number, updates: Partial<QueueSubTask>) => {
+    const newIterations = [...iterations];
+    newIterations[iterationIndex].items[subTaskIndex] = {
+      ...newIterations[iterationIndex].items[subTaskIndex],
+      ...updates
+    };
+    onIterationsUpdate(newIterations);
   };
 
-  const removeQueueItem = (index: number) => {
-    const newQueue = queue.filter((_, i) => i !== index);
-    newQueue.forEach((item, i) => item.position = i);
-    onQueueUpdate(newQueue);
+  const removeSubTask = (iterationIndex: number, subTaskIndex: number) => {
+    const newIterations = [...iterations];
+    newIterations[iterationIndex].items = newIterations[iterationIndex].items.filter((_, i) => i !== subTaskIndex);
+    onIterationsUpdate(newIterations);
   };
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const items = Array.from(queue);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    const [sourceIterationId, sourceSubTaskIndex] = result.source.droppableId.split('-');
+    const [destIterationId, destSubTaskIndex] = result.destination.droppableId.split('-');
 
-    items.forEach((item, index) => {
-      item.position = index;
-    });
+    const newIterations = [...iterations];
+    const sourceIteration = newIterations.find(i => i.id === sourceIterationId);
+    const destIteration = newIterations.find(i => i.id === destIterationId);
 
-    onQueueUpdate(items);
+    if (!sourceIteration || !destIteration) return;
+
+    const [movedItem] = sourceIteration.items.splice(result.source.index, 1);
+    destIteration.items.splice(result.destination.index, 0, movedItem);
+
+    onIterationsUpdate(newIterations);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex space-x-2">
-        <button
-          type="button"
-          onClick={addSubTask}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Add Sub-Task
-        </button>
-        <button
-          type="button"
-          onClick={addCooldown}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-secondary-600 hover:bg-secondary-700"
-        >
-          <ClockIcon className="h-5 w-5 mr-2" />
-          Add Cooldown Period
-        </button>
-      </div>
-
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="queue" type="QUEUE_ITEM">
-          {(provided: DroppableProvided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-2 min-h-[50px]"
-            >
-              {queue.map((item, index) => (
-                <Draggable 
-                  key={item.id} 
-                  draggableId={item.id} 
-                  index={index}
-                >
-                  {(provided: DraggableProvided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div
-                        {...provided.dragHandleProps}
-                        className="cursor-move text-gray-400 hover:text-gray-600"
-                      >
-                        <ArrowsUpDownIcon className="h-5 w-5" />
-                      </div>
-                      
-                      <span className="text-gray-500 font-medium">#{index + 1}</span>
-                      
-                      {item.type === QueueItemType.SUB_TASK ? (
-                        <select
-                          value={item.sub_task_id || ''}
-                          onChange={(e) => updateQueueItem(index, { sub_task_id: e.target.value })}
-                          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                        >
-                          <option value="">Select a sub-task</option>
-                          {availableSubTasks.map(subTask => (
-                            <option key={subTask.id} value={subTask.id}>
-                              {subTask.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div className="flex-1 flex items-center space-x-2">
-                          <ClockIcon className="h-5 w-5 text-gray-400" />
-                          <span className="text-sm text-gray-500">
-                            {frequency === 'daily' && 'Skip one day'}
-                            {frequency === 'weekly' && 'Skip one week'}
-                            {frequency === 'monthly' && 'Skip one month'}
-                          </span>
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => removeQueueItem(index)}
-                        className="text-gray-400 hover:text-red-500"
-                      >
-                        <XMarkIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
+        {iterations.map((iteration, index) => (
+          <QueueIterationComponent
+            key={iteration.id}
+            id={iteration.id}
+            position={index}
+            items={iteration.items}
+            frequency={frequency}
+            availableSubTasks={availableSubTasks}
+            onUpdateSubTask={(subTaskIndex, updates) => updateSubTask(index, subTaskIndex, updates)}
+            onRemoveSubTask={(subTaskIndex) => removeSubTask(index, subTaskIndex)}
+            onAddSubTask={() => addSubTask(index)}
+            onRemoveIteration={() => removeIteration(index)}
+          />
+        ))}
       </DragDropContext>
 
-      {queue.length === 0 && (
-        <div className="text-center text-gray-500 py-4">
-          No items in queue. Add sub-tasks or cooldowns to get started.
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={addIteration}
+        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+      >
+        <PlusIcon className="h-5 w-5 mr-2" />
+        Add {frequency === 'daily' ? 'Day' : frequency === 'weekly' ? 'Week' : 'Month'}
+      </button>
     </div>
   );
 };

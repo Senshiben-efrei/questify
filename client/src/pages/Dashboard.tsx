@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Area, Project, Task, TaskType, EvaluationMethod, QueueItem, QueueItemType } from '../types';
+import { Area, Project, Task, TaskType, EvaluationMethod, QueueSubTask, QueueIteration } from '../types';
 import AddAreaModal from '../components/Areas/AddAreaModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
@@ -536,9 +536,9 @@ const Dashboard: React.FC = () => {
                       <div className="mt-2 text-sm text-gray-600">
                         <span>
                           Sub-tasks: {
-                            'sub_tasks' in task.queue 
-                              ? task.queue.sub_tasks.length 
-                              : task.queue.items.filter(item => item.type === QueueItemType.SUB_TASK).length
+                            'iterations' in task.queue 
+                              ? task.queue.iterations.reduce((total, iteration) => total + iteration.items.length, 0)
+                              : 0
                           }
                         </span>
                       </div>

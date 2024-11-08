@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
-import { Area, Project, Task, TaskType, EvaluationMethod, QueueItem, QueueItemType } from '../../types';
+import { Area, Project, Task, TaskType, EvaluationMethod, QueueSubTask, QueueIteration } from '../../types';
 import QueueManager from './QueueManager';
 
 interface EditTaskModalProps {
@@ -42,11 +42,11 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const [selectedAreaId, setSelectedAreaId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Add queue state
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [iterations, setIterations] = useState<QueueIteration[]>([]);
 
   // Initialize form with task data
   useEffect(() => {
@@ -69,30 +69,26 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   // Initialize queue when task changes
   useEffect(() => {
     if (task && task.queue) {
-      // Check if it's the old queue format
-      if ('sub_tasks' in task.queue) {
-        const oldQueue = task.queue as { 
+      if ('iterations' in task.queue) {
+        // New format
+        setIterations(task.queue.iterations);
+      } else {
+        // Convert old format to new format
+        const oldQueue = task.queue as {
           sub_tasks: Array<{ id: string; position: number; completed: boolean }>;
-          current_position: number;
           rotation_type: string;
         };
         
-        const queueItems: QueueItem[] = oldQueue.sub_tasks.map((subTask) => ({
-          id: subTask.id,
-          type: QueueItemType.SUB_TASK,
-          position: subTask.position,
-          completed: subTask.completed,
-          sub_task_id: subTask.id
-        }));
-        setQueue(queueItems);
-      } else {
-        // New queue format
-        const newQueue = task.queue as {
-          items: QueueItem[];
-          current_position: number;
-          rotation_type: "sequential";
-        };
-        setQueue(newQueue.items);
+        // Create a single iteration with the old sub-tasks
+        setIterations([{
+          id: crypto.randomUUID(),
+          position: 0,
+          items: oldQueue.sub_tasks.map(subTask => ({
+            id: crypto.randomUUID(),
+            sub_task_id: subTask.id,
+            execution_time: '00:00'  // Default time
+          }))
+        }]);
       }
     }
   }, [task]);
@@ -152,7 +148,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             start_date: startDate || null,
             end_date: endDate || null,
             queue: {
-              items: queue,
+              iterations,
               rotation_type: "sequential"
             }
           };
@@ -176,7 +172,15 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
       await onSubmit(task.id, taskData);
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update task');
+      // Extract error message from different possible error formats
+      const errorMessage = err.response?.data?.detail
+          ? typeof err.response.data.detail === 'string'
+              ? err.response.data.detail
+              : Array.isArray(err.response.data.detail)
+                  ? err.response.data.detail[0]?.msg || 'Failed to update task'
+                  : 'Failed to update task'
+          : 'Failed to update task';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -395,9 +399,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 Queue Management
               </label>
               <QueueManager
-                queue={queue}
-                onQueueUpdate={setQueue}
+                iterations={iterations}
+                onIterationsUpdate={setIterations}
                 availableSubTasks={tasks.filter(t => t.task_type === TaskType.SUB_TASK)}
+                frequency={frequency}
               />
             </div>
           </>

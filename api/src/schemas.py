@@ -92,15 +92,25 @@ class QueueItem(BaseModel):
     position: int
     sub_task_id: Optional[str] = None  # For sub-task references
 
+class QueueSubTask(BaseModel):
+    id: str
+    sub_task_id: str
+    execution_time: str  # HH:MM format
+
+class QueueIteration(BaseModel):
+    id: str
+    position: int
+    items: List[QueueSubTask]
+
 class TaskQueue(BaseModel):
-    items: List[QueueItem]
+    iterations: List[QueueIteration]
     rotation_type: str = "sequential"
 
 class PlaceholderTaskCreate(TaskBase):
     execution_time: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    queue: TaskQueue = TaskQueue(items=[])
+    queue: TaskQueue
 
     @validator('end_date')
     def validate_dates(cls, v, values):

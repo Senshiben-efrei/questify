@@ -35,15 +35,20 @@ export enum QueueItemType {
   COOLDOWN = "COOLDOWN"
 }
 
-export interface QueueItem {
+export interface QueueSubTask {
   id: string;
-  type: QueueItemType;
+  sub_task_id: string;
+  execution_time: string;  // HH:MM format
+}
+
+export interface QueueIteration {
+  id: string;
   position: number;
-  sub_task_id?: string;  // For sub-task references only
+  items: QueueSubTask[];
 }
 
 export interface TaskQueue {
-  items: QueueItem[];
+  iterations: QueueIteration[];
   rotation_type: "sequential";
 }
 
@@ -63,10 +68,7 @@ export interface Task {
   project_id: string | null;
   area_id: string | null;
   queue: {
-    sub_tasks: Array<{ id: string; position: number; completed: boolean }>;
-    rotation_type: string;
-  } | {
-    items: QueueItem[];
+    iterations: QueueIteration[];
     rotation_type: "sequential";
   } | null;
   created_at: string;

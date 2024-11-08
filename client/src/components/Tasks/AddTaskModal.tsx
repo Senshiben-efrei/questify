@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
-import { Area, Project, Task, TaskType, EvaluationMethod, QueueItem } from '../../types';
+import { Area, Project, Task, TaskType, EvaluationMethod, QueueSubTask, QueueIteration } from '../../types';
 import QueueManager from './QueueManager';
 
 interface AddTaskModalProps {
@@ -41,7 +41,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedPlaceholderId, setSelectedPlaceholderId] = useState<string>('');
   
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Filter projects based on selected area
@@ -57,8 +57,12 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     }
   }, [taskType]);
 
-  // Add queue state
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  // Update the state for queue management
+  const [iterations, setIterations] = useState<QueueIteration[]>([{
+    id: crypto.randomUUID(),
+    position: 0,
+    items: []
+  }]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +107,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             start_date: startDate || null,
             end_date: endDate || null,
             queue: {
-              items: queue,
+              iterations,
               rotation_type: "sequential"
             }
           };
@@ -128,7 +132,14 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       resetForm();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create task');
+      const errorMessage = err.response?.data?.detail
+        ? typeof err.response.data.detail === 'string'
+            ? err.response.data.detail
+            : Array.isArray(err.response.data.detail)
+                ? err.response.data.detail[0]?.msg || 'Failed to create task'
+                : 'Failed to create task'
+        : 'Failed to create task';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -365,9 +376,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 Queue Management
               </label>
               <QueueManager
-                queue={queue}
-                onQueueUpdate={setQueue}
+                iterations={iterations}
+                onIterationsUpdate={setIterations}
                 availableSubTasks={tasks.filter(t => t.task_type === TaskType.SUB_TASK)}
+                frequency={frequency}
               />
             </div>
           </>
