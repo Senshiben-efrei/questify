@@ -56,6 +56,9 @@ export interface QueueIteration {
   id: string;
   position: number;
   items: QueueItem[];
+  isCooldown?: boolean;
+  cooldownDuration?: string;
+  cooldownDescription?: string;
 }
 
 export interface TaskQueue {

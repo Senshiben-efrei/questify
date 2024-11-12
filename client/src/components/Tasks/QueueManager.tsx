@@ -1,12 +1,12 @@
 import React from 'react';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { 
   Task, 
   QueueItem, 
-  QueueIteration, 
-  QueueItemType 
+  QueueItemType,
+  QueueIteration 
 } from '../../types/index';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import QueueIterationComponent from './QueueIteration';
 
 interface QueueManagerProps {
@@ -27,7 +27,10 @@ const QueueManager: React.FC<QueueManagerProps> = ({
     newIterations.push({
       id: crypto.randomUUID(),
       position: iterations.length,
-      items: []
+      items: [],
+      isCooldown: false,
+      cooldownDuration: '24:00',
+      cooldownDescription: 'Rest Day'
     });
     onIterationsUpdate(newIterations);
   };
@@ -38,6 +41,28 @@ const QueueManager: React.FC<QueueManagerProps> = ({
     onIterationsUpdate(newIterations);
   };
 
+  const toggleCooldown = (index: number) => {
+    const newIterations = [...iterations];
+    const iteration = newIterations[index];
+    iteration.isCooldown = !iteration.isCooldown;
+    
+    if (iteration.isCooldown) {
+      iteration.cooldownDuration = '24:00';
+      iteration.cooldownDescription = 'Rest Day';
+      iteration.items = [];
+    }
+    
+    onIterationsUpdate(newIterations);
+  };
+
+  const updateCooldown = (index: number, duration: string, description: string) => {
+    const newIterations = [...iterations];
+    const iteration = newIterations[index];
+    iteration.cooldownDuration = duration;
+    iteration.cooldownDescription = description;
+    onIterationsUpdate(newIterations);
+  };
+
   const addSubTask = (iterationIndex: number) => {
     const newIterations = [...iterations];
     newIterations[iterationIndex].items.push({
@@ -45,17 +70,6 @@ const QueueManager: React.FC<QueueManagerProps> = ({
       type: QueueItemType.SUB_TASK,
       sub_task_id: '',
       execution_time: '00:00'
-    });
-    onIterationsUpdate(newIterations);
-  };
-
-  const addCooldown = (iterationIndex: number) => {
-    const newIterations = [...iterations];
-    newIterations[iterationIndex].items.push({
-      id: crypto.randomUUID(),
-      type: QueueItemType.COOLDOWN,
-      duration: '24:00',
-      description: 'Rest Day'
     });
     onIterationsUpdate(newIterations);
   };
@@ -102,13 +116,17 @@ const QueueManager: React.FC<QueueManagerProps> = ({
             id={iteration.id}
             position={index}
             items={iteration.items}
+            isCooldown={iteration.isCooldown || false}
+            cooldownDuration={iteration.cooldownDuration}
+            cooldownDescription={iteration.cooldownDescription}
             frequency={frequency}
             availableSubTasks={availableSubTasks}
             onUpdateQueueItem={(itemIndex, updates) => updateQueueItem(index, itemIndex, updates)}
             onRemoveQueueItem={(itemIndex) => removeQueueItem(index, itemIndex)}
             onAddSubTask={() => addSubTask(index)}
-            onAddCooldown={() => addCooldown(index)}
+            onUpdateCooldown={(duration, description) => updateCooldown(index, duration, description)}
             onRemoveIteration={() => removeIteration(index)}
+            onToggleCooldown={() => toggleCooldown(index)}
           />
         ))}
       </DragDropContext>
