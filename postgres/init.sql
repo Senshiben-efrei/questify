@@ -89,6 +89,8 @@ CREATE TABLE task_instances (
     progress INTEGER DEFAULT 0,
     due_date TIMESTAMP WITH TIME ZONE,
     completion_date TIMESTAMP WITH TIME ZONE,
+    iteration_position INTEGER DEFAULT 0,
+    parent_instance_id UUID REFERENCES task_instances(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

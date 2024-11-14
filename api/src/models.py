@@ -137,8 +137,11 @@ class TaskInstance(Base):
     progress = Column(Integer, default=0)
     due_date = Column(DateTime(timezone=True))
     completion_date = Column(DateTime(timezone=True))
+    iteration_position = Column(Integer, default=0)
+    parent_instance_id = Column(UUID(as_uuid=True), ForeignKey('task_instances.id', ondelete='CASCADE'), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Relationship
+    # Relationships
     task = relationship("Task", back_populates="instances")
+    parent_instance = relationship("TaskInstance", remote_side=[id], backref="sub_instances")

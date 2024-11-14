@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy import or_, and_
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta, date
 
 from ..database import get_db
 from ..models import Task, TaskInstance, Area, Project, TaskType
@@ -12,6 +12,8 @@ from ..schemas import (
     Task as TaskSchema, TaskInstance as TaskInstanceSchema
 )
 from ..auth.utils import get_current_user
+from .instance_generator import TaskInstanceGenerator
+from . import jobs
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -367,3 +369,171 @@ async def delete_task(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+@router.post("/generate-instances")
+async def generate_instances(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Generate instances for today and tomorrow"""
+    generator = TaskInstanceGenerator(db)
+    stats = {
+        'today': {'created': 0, 'skipped': 0},
+        'tomorrow': {'created': 0, 'skipped': 0}
+    }
+    
+    # Generate for today
+    today = datetime.now().date()
+    today_stats = generator.generate_instances_for_user(current_user.id, today)
+    stats['today'] = today_stats
+    
+    # Generate for tomorrow
+    tomorrow = today + timedelta(days=1)
+    tomorrow_stats = generator.generate_instances_for_user(current_user.id, tomorrow)
+    stats['tomorrow'] = tomorrow_stats
+    
+    # Schedule next automatic generation
+    jobs.schedule_instance_generation(background_tasks)
+    
+    return {
+        "message": "Instances generated successfully",
+        "statistics": {
+            "today": {
+                "date": today.isoformat(),
+                "instances_created": stats['today']['created'],
+                "instances_skipped": stats['today']['skipped']
+            },
+            "tomorrow": {
+                "date": tomorrow.isoformat(),
+                "instances_created": stats['tomorrow']['created'],
+                "instances_skipped": stats['tomorrow']['skipped']
+            },
+            "total_created": stats['today']['created'] + stats['tomorrow']['created'],
+            "total_skipped": stats['today']['skipped'] + stats['tomorrow']['skipped']
+        }
+    }
+
+@router.get("/instances/{date}", response_model=List[TaskInstanceSchema])
+async def get_instances_for_date(
+    date: date,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get all task instances for a specific date"""
+    instances = db.query(TaskInstance).join(Task).outerjoin(
+        Project, Task.project_id == Project.id
+    ).outerjoin(
+        Area, 
+        or_(
+            Task.area_id == Area.id,
+            Project.area_id == Area.id
+        )
+    ).filter(
+        TaskInstance.due_date == date,
+        or_(
+            Area.user_id == current_user.id,
+            and_(  # Handle tasks without area or project
+                Task.area_id.is_(None),
+                Task.project_id.is_(None)
+            )
+        )
+    ).all()
+    
+    return instances
+
+@router.get("/instances/range/{start_date}/{end_date}", response_model=List[TaskInstanceSchema])
+async def get_instances_for_date_range(
+    start_date: date,
+    end_date: date,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get all task instances within a date range"""
+    instances = db.query(TaskInstance).join(Task).outerjoin(
+        Project, Task.project_id == Project.id
+    ).outerjoin(
+        Area, 
+        or_(
+            Task.area_id == Area.id,
+            Project.area_id == Area.id
+        )
+    ).filter(
+        TaskInstance.due_date >= start_date,
+        TaskInstance.due_date <= end_date,
+        Area.user_id == current_user.id
+    ).all()
+    
+    return instances
+
+@router.delete("/instances/clear")
+async def clear_instances(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Clear all instances for the current user"""
+    # Get all task instances for user's tasks
+    instances = db.query(TaskInstance).join(Task).outerjoin(
+        Project, Task.project_id == Project.id
+    ).outerjoin(
+        Area, 
+        or_(
+            Task.area_id == Area.id,
+            Project.area_id == Area.id
+        )
+    ).filter(
+        or_(
+            Area.user_id == current_user.id,
+            and_(  # Handle tasks without area or project
+                Task.area_id.is_(None),
+                Task.project_id.is_(None)
+            )
+        )
+    ).all()
+
+    # Delete all instances
+    for instance in instances:
+        db.delete(instance)
+    
+    db.commit()
+    
+    return {"message": "All instances cleared successfully"}
+
+@router.delete("/instances/{instance_id}")
+async def delete_instance(
+    instance_id: UUID,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Delete a specific task instance"""
+    # Get the instance and verify ownership
+    instance = db.query(TaskInstance).join(Task).outerjoin(
+        Project, Task.project_id == Project.id
+    ).outerjoin(
+        Area, 
+        or_(
+            Task.area_id == Area.id,
+            Project.area_id == Area.id
+        )
+    ).filter(
+        TaskInstance.id == instance_id,
+        or_(
+            Area.user_id == current_user.id,
+            and_(  # Handle tasks without area or project
+                Task.area_id.is_(None),
+                Task.project_id.is_(None)
+            )
+        )
+    ).first()
+
+    if not instance:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Instance not found"
+        )
+
+    # Delete the instance
+    db.delete(instance)
+    db.commit()
+    
+    return {"message": "Instance deleted successfully"}

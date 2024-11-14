@@ -10,6 +10,7 @@ import AddProjectModal from '../components/Projects/AddProjectModal';
 import EditProjectModal from '../components/Projects/EditProjectModal';
 import AddTaskModal from '../components/Tasks/AddTaskModal';
 import EditTaskModal from '../components/Tasks/EditTaskModal';
+import TaskInstances from '../components/Tasks/TaskInstances';
 
 // Update the getTaskTags function
 const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
@@ -561,6 +562,10 @@ const Dashboard: React.FC = () => {
             ))
           )}
         </div>
+      </div>
+
+      <div className="mt-8">
+        <TaskInstances tasks={tasks} />
       </div>
 
       <ConfirmationModal

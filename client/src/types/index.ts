@@ -124,10 +124,12 @@ export interface StandaloneTaskCreate extends TaskBaseCreate {
 export interface TaskInstance {
   id: string;
   task_id: string;
-  status: string;
+  status: 'pending' | 'in_progress' | 'completed';
   progress: number;
-  due_date: string | null;
-  completion_date: string | null;
+  due_date: string;
+  completion_date?: string;
+  position?: number;
+  placeholder_instance_id?: string;
   created_at: string;
   updated_at: string;
 } 

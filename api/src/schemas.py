@@ -218,9 +218,15 @@ class TaskInstanceBase(BaseModel):
 class TaskInstanceCreate(TaskInstanceBase):
     task_id: UUID4
 
-class TaskInstance(TaskInstanceBase):
-    id: UUID4
-    task_id: UUID4
+class TaskInstance(BaseModel):
+    id: UUID
+    task_id: UUID
+    status: str
+    progress: int
+    due_date: datetime
+    completion_date: Optional[datetime]
+    iteration_position: int
+    parent_instance_id: Optional[UUID]
     created_at: datetime
     updated_at: datetime
 
