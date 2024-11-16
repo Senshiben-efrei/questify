@@ -128,8 +128,8 @@ export interface TaskInstance {
   progress: number;
   due_date: string;
   completion_date?: string;
-  position?: number;
-  placeholder_instance_id?: string;
+  iteration_position: number;
+  parent_instance_id?: string;
   created_at: string;
   updated_at: string;
 } 

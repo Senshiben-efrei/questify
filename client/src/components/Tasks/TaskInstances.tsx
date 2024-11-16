@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TaskInstance, Task } from '../../types';
+import { TaskInstance, Task, TaskType } from '../../types';
 import { taskInstanceService } from '../../services/taskInstanceService';
 import { format, addDays } from 'date-fns';
 import { TrashIcon } from '@heroicons/react/24/outline';
@@ -22,6 +22,16 @@ interface GenerationStats {
     total_created: number;
     total_skipped: number;
     message?: string;
+}
+
+interface OrganizedInstances {
+    standalone: TaskInstance[];
+    placeholder: {
+        [key: string]: {
+            parent: TaskInstance;
+            children: TaskInstance[];
+        }
+    }
 }
 
 const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
@@ -96,6 +106,39 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
     const getTaskDetails = (taskId: string) => {
         return tasks.find(task => task.id === taskId);
     };
+
+    const getPlaceholderTask = (instance: TaskInstance) => {
+        if (!instance.parent_instance_id) return null;
+        const parentInstance = instances.find(i => i.id === instance.parent_instance_id);
+        if (!parentInstance) return null;
+        return getTaskDetails(parentInstance.task_id);
+    };
+
+    const organizedInstances = instances.reduce((acc: OrganizedInstances, instance: TaskInstance) => {
+        const task = getTaskDetails(instance.task_id);
+        if (!task) return acc;
+
+        if (task.task_type === TaskType.STANDALONE) {
+            acc.standalone.push(instance);
+        } else if (task.task_type === TaskType.SUB_TASK && instance.parent_instance_id) {
+            // Find the placeholder task for this sub-task
+            const parentInstance = instances.find(i => i.id === instance.parent_instance_id);
+            if (parentInstance) {
+                const placeholderTask = getTaskDetails(parentInstance.task_id);
+                if (placeholderTask && placeholderTask.task_type === TaskType.PLACEHOLDER) {
+                    if (!acc.placeholder[placeholderTask.id]) {
+                        acc.placeholder[placeholderTask.id] = {
+                            parent: parentInstance,
+                            children: []
+                        };
+                    }
+                    acc.placeholder[placeholderTask.id].children.push(instance);
+                }
+            }
+        }
+
+        return acc;
+    }, { standalone: [], placeholder: {} });
 
     const today = new Date();
     const tomorrow = addDays(today, 1);
@@ -190,8 +233,9 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                     No tasks scheduled for this date
                 </div>
             ) : (
-                <div className="space-y-2">
-                    {instances.map(instance => {
+                <div className="space-y-4">
+                    {/* Standalone Tasks */}
+                    {organizedInstances.standalone.map(instance => {
                         const task = getTaskDetails(instance.task_id);
                         return (
                             <div
@@ -235,6 +279,65 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                                     >
                                         <TrashIcon className="h-5 w-5" />
                                     </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {/* Placeholder Tasks with their Sub-tasks */}
+                    {Object.values(organizedInstances.placeholder).map(({ parent, children }) => {
+                        const placeholderTask = getTaskDetails(parent.task_id);
+                        if (!placeholderTask) return null;
+
+                        return (
+                            <div key={parent.id} className="bg-white rounded-lg shadow">
+                                <div className="p-4 border-b">
+                                    <h3 className="font-medium text-gray-900">{placeholderTask.name}</h3>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    {children.map(instance => {
+                                        const task = getTaskDetails(instance.task_id);
+                                        return (
+                                            <div
+                                                key={instance.id}
+                                                className="flex justify-between items-start pl-4 border-l-2 border-primary-200"
+                                            >
+                                                <div>
+                                                    <h4 className="font-medium">{task?.name}</h4>
+                                                    <div className="mt-1">
+                                                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                                                            instance.status === 'completed' 
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : instance.status === 'in_progress'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {instance.status}
+                                                        </span>
+                                                        {instance.progress > 0 && (
+                                                            <span className="ml-2 text-sm text-gray-600">
+                                                                Progress: {instance.progress}%
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await taskInstanceService.deleteInstance(instance.id);
+                                                            setInstances(prev => prev.filter(i => i.id !== instance.id));
+                                                        } catch (err: any) {
+                                                            setError(err.response?.data?.detail || 'Failed to delete instance');
+                                                        }
+                                                    }}
+                                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                                    title="Delete instance"
+                                                >
+                                                    <TrashIcon className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );
