@@ -10,6 +10,7 @@ Turn your life into an RPG! Real-Life RPG is a gamified self-improvement applica
   - Single tasks with binary or numerical goals
   - Placeholder tasks with rotating sub-tasks
   - Recurring tasks with automatic instance generation
+  - Task Hub for sharing and discovering tasks from other users
 - **RPG Elements**:
   - Experience Points (XP) for completing tasks
   - Health Points (HP) system for maintaining streaks
@@ -22,6 +23,12 @@ Turn your life into an RPG! Real-Life RPG is a gamified self-improvement applica
   - Friend system
   - Leaderboards
   - Collaborative challenges
+  - Task sharing and discovery through the Task Hub
+- **Community Features**:
+  - Browse and import tasks from other users
+  - Share your successful task templates
+  - Rate and comment on shared tasks
+  - Filter tasks by category, popularity, or effectiveness
 
 ## 🚀 Getting Started
 
