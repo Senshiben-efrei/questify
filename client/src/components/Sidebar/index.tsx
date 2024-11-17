@@ -1,18 +1,22 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   HomeIcon,
   ClipboardDocumentListIcon,
   UsersIcon,
   ChartBarIcon,
   CalendarIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
-  const navigation = [
+  const authenticatedNavigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
     { name: 'Task System', href: '/tasks', icon: ClipboardDocumentListIcon },
     { name: 'Social', href: '/social', icon: UsersIcon },
@@ -20,6 +24,13 @@ const Sidebar = () => {
     { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
     { name: 'Manage', href: '/manage', icon: Cog6ToothIcon },
   ];
+
+  const publicNavigation = [
+    { name: 'Login', href: '/login', icon: ArrowRightOnRectangleIcon },
+    { name: 'Register', href: '/register', icon: UserPlusIcon },
+  ];
+
+  const navigation = user ? authenticatedNavigation : publicNavigation;
 
   return (
     <aside className="w-64 bg-base-100 shadow min-h-screen">
