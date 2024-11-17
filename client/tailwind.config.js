@@ -24,8 +24,8 @@ module.exports = {
   },
   plugins: [require("daisyui")],
   daisyui: {
-    themes: ["light", "dark", "cupcake"], // You can add more themes
-    darkTheme: "dark",
+    themes: ["light", "business", "cupcake"],
+    darkTheme: "business",
     base: true,
     styled: true,
     utils: true,
