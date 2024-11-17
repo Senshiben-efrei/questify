@@ -4,6 +4,7 @@ import { DragDropContext } from 'react-beautiful-dnd';
 import Layout from './components/Layout';
 import AppRoutes from './routes';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   const onDragEnd = () => {
@@ -12,13 +13,15 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Layout>
-            <AppRoutes />
-          </Layout>
-        </DragDropContext>
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Layout>
+              <AppRoutes />
+            </Layout>
+          </DragDropContext>
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }
