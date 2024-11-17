@@ -19,7 +19,7 @@ const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
   // Task Type Tag
   tags.push({
     label: `type: ${task.task_type}`,
-    color: 'bg-blue-100 text-blue-800',
+    color: 'badge badge-info',
     type: 'type'
   });
 
@@ -27,26 +27,19 @@ const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
   if (task.project_id) {
     const project = projects.find(p => p.id === task.project_id);
     if (project) {
-      const area = areas.find(a => a.id === project.area_id);
       tags.push({
         label: `project: ${project.name}`,
-        color: 'bg-green-100 text-green-800',
+        color: 'badge badge-success',
         type: 'project'
       });
-      if (area) {
-        tags.push({
-          label: `area: ${area.name}`,
-          color: 'bg-purple-100 text-purple-800',
-          type: 'area'
-        });
-      }
     }
-  } else if (task.area_id) {
+  }
+  if (task.area_id) {
     const area = areas.find(a => a.id === task.area_id);
     if (area) {
       tags.push({
         label: `area: ${area.name}`,
-        color: 'bg-purple-100 text-purple-800',
+        color: 'badge badge-secondary',
         type: 'area'
       });
     }
@@ -56,7 +49,7 @@ const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
   if (task.evaluation_method) {
     tags.push({
       label: `evaluation: ${task.evaluation_method}${task.target_value ? ` (target: ${task.target_value})` : ''}`,
-      color: 'bg-yellow-100 text-yellow-800',
+      color: 'badge badge-warning',
       type: 'evaluation'
     });
   }
@@ -65,7 +58,7 @@ const getTaskTags = (task: Task, areas: Area[], projects: Project[]) => {
   if (task.is_recurring) {
     tags.push({
       label: `recurring: ${task.frequency}`,
-      color: 'bg-pink-100 text-pink-800',
+      color: 'badge badge-accent',
       type: 'recurring'
     });
   }
@@ -365,20 +358,20 @@ const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 text-red-700 rounded-md">
-        {error}
+      <div className="alert alert-error">
+        <span>{error}</span>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-base-content mb-8">Dashboard</h1>
 
       {/* Areas Section */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Areas</h2>
+          <h2 className="text-2xl font-semibold text-base-content">Areas</h2>
           <button 
             onClick={() => setIsAddAreaModalOpen(true)}
             className="btn btn-primary"
@@ -390,13 +383,13 @@ const Dashboard: React.FC = () => {
           {areas.map(area => (
             <div
               key={area.id}
-              className="p-4 rounded-lg border border-gray-200 bg-white hover:border-primary-500 transition-colors"
+              className="p-4 rounded-lg border border-base-300 bg-base-100 hover:border-primary transition-colors"
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">{area.name}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{area.description}</p>
-                  <div className="mt-2 text-sm text-primary-600">XP: {area.xp}</div>
+                  <h3 className="text-lg font-medium text-base-content">{area.name}</h3>
+                  <p className="text-sm text-base-content/70">{area.description}</p>
+                  <div className="mt-2 text-sm text-primary">XP: {area.xp}</div>
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -421,7 +414,7 @@ const Dashboard: React.FC = () => {
       {/* Projects Section - Now always visible */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Projects</h2>
+          <h2 className="text-2xl font-semibold text-base-content">Projects</h2>
           <button 
             onClick={() => setIsAddProjectModalOpen(true)}
             className="btn btn-primary"
@@ -435,12 +428,12 @@ const Dashboard: React.FC = () => {
             return (
               <div
                 key={project.id}
-                className="p-4 rounded-lg border border-gray-200 bg-white"
+                className="p-4 rounded-lg border border-base-300 bg-base-100"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                    <p className="text-gray-600 text-sm mt-1">{project.description}</p>
+                    <h3 className="text-lg font-medium text-base-content">{project.name}</h3>
+                    <p className="text-sm text-base-content/70">{project.description}</p>
                     {area && (
                       <div className="mt-2">
                         <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
@@ -473,7 +466,7 @@ const Dashboard: React.FC = () => {
       {/* Tasks Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Tasks</h2>
+          <h2 className="text-2xl font-semibold text-base-content">Tasks</h2>
           <button 
             onClick={() => setIsAddTaskModalOpen(true)}
             className="btn btn-primary"
@@ -481,21 +474,21 @@ const Dashboard: React.FC = () => {
             Add Task
           </button>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-base-100 rounded-lg border border-base-300">
           {tasks.length === 0 ? (
-            <div className="p-4 text-gray-500 text-center">
+            <div className="p-4 text-base-content/70 text-center">
               No tasks yet. Create one to get started!
             </div>
           ) : (
             tasks.map(task => (
               <div
                 key={task.id}
-                className="p-4 border-b border-gray-200 last:border-b-0"
+                className="p-4 border-b border-base-300 last:border-b-0"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900">{task.name}</h3>
+                      <h3 className="text-lg font-medium text-base-content">{task.name}</h3>
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => setTaskToEdit(task)}
@@ -511,11 +504,11 @@ const Dashboard: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                    <p className="text-sm text-base-content/70">{task.description}</p>
                     
                     {/* Timing Information */}
                     {(task.execution_time || task.start_date || task.end_date) && (
-                      <div className="mt-2 text-sm text-gray-600">
+                      <div className="mt-2 text-sm text-base-content/70">
                         {task.execution_time && (
                           <span className="mr-4">Duration: {task.execution_time} minutes</span>
                         )}
@@ -534,7 +527,7 @@ const Dashboard: React.FC = () => {
 
                     {/* Queue Information for Placeholder Tasks */}
                     {task.task_type === TaskType.PLACEHOLDER && task.queue && (
-                      <div className="mt-2 text-sm text-gray-600">
+                      <div className="mt-2 text-sm text-base-content/70">
                         <span>
                           Sub-tasks: {
                             'iterations' in task.queue 

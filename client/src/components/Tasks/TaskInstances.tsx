@@ -149,20 +149,20 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                 <div className="flex items-center space-x-4">
                     <button
                         onClick={() => setSelectedDate(today)}
-                        className={`px-4 py-2 rounded-md ${
+                        className={`btn ${
                             format(selectedDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                ? 'btn-primary'
+                                : 'btn-neutral'
                         }`}
                     >
                         Today
                     </button>
                     <button
                         onClick={() => setSelectedDate(tomorrow)}
-                        className={`px-4 py-2 rounded-md ${
+                        className={`btn ${
                             format(selectedDate, 'yyyy-MM-dd') === format(tomorrow, 'yyyy-MM-dd')
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                ? 'btn-primary'
+                                : 'btn-neutral'
                         }`}
                     >
                         Tomorrow
@@ -171,13 +171,13 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                 <div className="flex items-center space-x-2">
                     <button
                         onClick={handleClearInstances}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        className="btn btn-error"
                     >
                         Clear All Instances
                     </button>
                     <button
                         onClick={handleGenerateInstances}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+                        className="btn btn-primary"
                     >
                         Generate Instances
                     </button>
@@ -186,30 +186,30 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
 
             {/* Generation Stats */}
             {generationStats && (
-                <div className="bg-green-50 p-4 rounded-md mb-4">
-                    <h3 className="font-medium text-green-800 mb-2">Generation Results:</h3>
+                <div className="alert alert-success mb-4">
+                    <h3 className="font-medium mb-2">Generation Results:</h3>
                     {generationStats.message ? (
-                        <p className="text-green-700 font-medium">{generationStats.message}</p>
+                        <p className="font-medium">{generationStats.message}</p>
                     ) : (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <h4 className="font-medium text-green-700">Today ({generationStats.today.date})</h4>
-                                    <p className="text-green-600">
+                                    <h4 className="font-medium">Today ({generationStats.today.date})</h4>
+                                    <p>
                                         Created: {generationStats.today.instances_created} |{' '}
                                         Skipped: {generationStats.today.instances_skipped}
                                     </p>
                                 </div>
                                 <div>
-                                    <h4 className="font-medium text-green-700">Tomorrow ({generationStats.tomorrow.date})</h4>
-                                    <p className="text-green-600">
+                                    <h4 className="font-medium">Tomorrow ({generationStats.tomorrow.date})</h4>
+                                    <p>
                                         Created: {generationStats.tomorrow.instances_created} |{' '}
                                         Skipped: {generationStats.tomorrow.instances_skipped}
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-2 pt-2 border-t border-green-200">
-                                <p className="text-green-700 font-medium">
+                            <div className="mt-2 pt-2 border-t border-base-300">
+                                <p className="font-medium">
                                     Total: {generationStats.total_created} created, {generationStats.total_skipped} skipped
                                 </p>
                             </div>
@@ -218,18 +218,18 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                 </div>
             )}
 
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-base-content">
                 Tasks for {format(selectedDate, 'MMMM d, yyyy')}
             </h2>
 
             {loading ? (
-                <div className="text-center py-4">Loading instances...</div>
+                <div className="text-center py-4 text-base-content/70">Loading instances...</div>
             ) : error ? (
-                <div className="text-red-600 bg-red-50 p-4 rounded-md">
+                <div className="alert alert-error">
                     {error}
                 </div>
             ) : instances.length === 0 ? (
-                <div className="text-gray-500 text-center py-4">
+                <div className="text-center py-4 text-base-content/70">
                     No tasks scheduled for this date
                 </div>
             ) : (
@@ -240,26 +240,26 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                         return (
                             <div
                                 key={instance.id}
-                                className="p-4 bg-white rounded-lg shadow"
+                                className="p-4 bg-base-100 rounded-lg shadow"
                             >
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h3 className="font-medium">{task?.name}</h3>
-                                        <p className="text-sm text-gray-600">
+                                        <h3 className="font-medium text-base-content">{task?.name}</h3>
+                                        <p className="text-sm text-base-content/70">
                                             {task?.description}
                                         </p>
                                         <div className="mt-2">
-                                            <span className={`px-2 py-1 text-xs font-medium rounded ${
+                                            <span className={`badge ${
                                                 instance.status === 'completed' 
-                                                    ? 'bg-green-100 text-green-800'
+                                                    ? 'badge-success'
                                                     : instance.status === 'in_progress'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-gray-100 text-gray-800'
+                                                    ? 'badge-warning'
+                                                    : 'badge-neutral'
                                             }`}>
                                                 {instance.status}
                                             </span>
                                             {instance.progress > 0 && (
-                                                <span className="ml-2 text-sm text-gray-600">
+                                                <span className="ml-2 text-sm text-base-content/70">
                                                     Progress: {instance.progress}%
                                                 </span>
                                             )}
@@ -274,7 +274,7 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                                                 setError(err.response?.data?.detail || 'Failed to delete instance');
                                             }
                                         }}
-                                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                        className="btn btn-ghost btn-sm text-error"
                                         title="Delete instance"
                                     >
                                         <TrashIcon className="h-5 w-5" />
@@ -290,9 +290,9 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                         if (!placeholderTask) return null;
 
                         return (
-                            <div key={parent.id} className="bg-white rounded-lg shadow">
-                                <div className="p-4 border-b">
-                                    <h3 className="font-medium text-gray-900">{placeholderTask.name}</h3>
+                            <div key={parent.id} className="bg-base-100 rounded-lg shadow">
+                                <div className="p-4 border-b border-base-300">
+                                    <h3 className="font-medium text-base-content">{placeholderTask.name}</h3>
                                 </div>
                                 <div className="p-4 space-y-3">
                                     {children.map(instance => {
@@ -300,22 +300,22 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                                         return (
                                             <div
                                                 key={instance.id}
-                                                className="flex justify-between items-start pl-4 border-l-2 border-primary-200"
+                                                className="flex justify-between items-start pl-4 border-l-2 border-primary"
                                             >
                                                 <div>
-                                                    <h4 className="font-medium">{task?.name}</h4>
+                                                    <h4 className="font-medium text-base-content">{task?.name}</h4>
                                                     <div className="mt-1">
-                                                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                                                        <span className={`badge ${
                                                             instance.status === 'completed' 
-                                                                ? 'bg-green-100 text-green-800'
+                                                                ? 'badge-success'
                                                                 : instance.status === 'in_progress'
-                                                                ? 'bg-yellow-100 text-yellow-800'
-                                                                : 'bg-gray-100 text-gray-800'
+                                                                ? 'badge-warning'
+                                                                : 'badge-neutral'
                                                         }`}>
                                                             {instance.status}
                                                         </span>
                                                         {instance.progress > 0 && (
-                                                            <span className="ml-2 text-sm text-gray-600">
+                                                            <span className="ml-2 text-sm text-base-content/70">
                                                                 Progress: {instance.progress}%
                                                             </span>
                                                         )}
@@ -330,7 +330,7 @@ const TaskInstances: React.FC<TaskInstancesProps> = ({ tasks }) => {
                                                             setError(err.response?.data?.detail || 'Failed to delete instance');
                                                         }
                                                     }}
-                                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                                    className="btn btn-ghost btn-sm text-error"
                                                     title="Delete instance"
                                                 >
                                                     <TrashIcon className="h-5 w-5" />
