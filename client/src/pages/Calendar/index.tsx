@@ -157,7 +157,9 @@ const TimeIndicator: React.FC<TimeIndicatorProps> = ({ containerRef }) => {
       const totalMinutes = hours * 60 + minutes;
       const minutesSinceMidnight = totalMinutes;
       
-      const hourHeight = window.innerWidth >= 1024 ? 112 : 128;
+      // Update height calculation for mobile
+      const isMobile = window.innerWidth < 640; // sm breakpoint
+      const hourHeight = isMobile ? 80 : (window.innerWidth >= 1024 ? 112 : 128); // 80px for mobile (h-20)
       const pixelsPerMinute = hourHeight / 60;
       const newTop = minutesSinceMidnight * pixelsPerMinute;
       
@@ -379,7 +381,11 @@ const Calendar: React.FC = () => {
           </div>
 
           {/* Time Grid - Mobile */}
-          <div className="flex sm:hidden border-t border-base-300">
+          <div className="flex sm:hidden border-t border-base-300 relative">
+            {/* Add time indicator for mobile if viewing today */}
+            {isSameDay(new Date(), today) && (
+              <TimeIndicator containerRef={timeGridRef} />
+            )}
             <div className="flex flex-col">
               {HOURS.map(({ display, value }) => (
                 <div 
@@ -502,34 +508,46 @@ const Calendar: React.FC = () => {
   return (
     <PageContainer>
       <div className="grid grid-cols-12 gap-2 sm:gap-8">
-        {/* Upcoming Events Section - reduced width */}
+        {/* Upcoming Events Section - Today only */}
         <div className="col-span-12 xl:col-span-3">
-          <h2 className="text-xl sm:text-2xl font-bold text-base-content mb-1.5">Upcoming Events</h2>
-          <p className="text-sm sm:text-base text-base-content/70 mb-4 sm:mb-6">Don't miss schedule</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-base-content mb-1.5">Today's Events</h2>
+          <p className="text-sm sm:text-base text-base-content/70 mb-4 sm:mb-6">Current schedule</p>
           <div className="flex gap-2 sm:gap-3 flex-col">
-            {events.map(event => (
-              <div key={event.id} className="card bg-base-100 shadow-xl">
-                <div className="card-body p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-base-content">{event.date} - {event.time}</p>
-                    <div className="dropdown dropdown-end">
-                      <button tabIndex={0} className="btn btn-ghost btn-circle btn-xs">
-                        <EllipsisHorizontalIcon className="h-4 w-4" />
-                      </button>
-                      <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                        <li><a>Edit</a></li>
-                        <li><a>Delete</a></li>
-                      </ul>
+            {events
+              .filter(event => event.date === format(new Date(), 'MMM d, yyyy'))
+              .sort((a, b) => {
+                const timeA = a.time.split(' - ')[0];
+                const timeB = b.time.split(' - ')[0];
+                return timeA.localeCompare(timeB);
+              })
+              .map(event => (
+                <div key={event.id} className="card bg-base-100 shadow-xl">
+                  <div className="card-body p-3 sm:p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-base-content">{event.time}</p>
+                      <div className="dropdown dropdown-end">
+                        <button tabIndex={0} className="btn btn-ghost btn-circle btn-xs">
+                          <EllipsisHorizontalIcon className="h-4 w-4" />
+                        </button>
+                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                          <li><a>Edit</a></li>
+                          <li><a>Delete</a></li>
+                        </ul>
+                      </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${getDotColor(event.color)}`}></span>
+                      <h3 className="text-base font-semibold text-base-content">{event.title}</h3>
+                    </div>
+                    <p className="text-sm text-base-content/70 mt-1">{event.description}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-full ${getDotColor(event.color)}`}></span>
-                    <h3 className="text-base font-semibold text-base-content">{event.title}</h3>
-                  </div>
-                  <p className="text-sm text-base-content/70 mt-1">{event.description}</p>
                 </div>
+              ))}
+            {events.filter(event => event.date === format(new Date(), 'MMM d, yyyy')).length === 0 && (
+              <div className="alert">
+                <span>No events scheduled for today</span>
               </div>
-            ))}
+            )}
           </div>
         </div>
 

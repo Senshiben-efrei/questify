@@ -36,7 +36,7 @@ services:
       - ./client/public:/app/public
       - /app/node_modules
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_API_URL=${API_URL:-http://localhost:8000}
     depends_on:
       - api
     networks:
