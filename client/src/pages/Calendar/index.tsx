@@ -22,9 +22,12 @@ interface Event {
   color: 'purple' | 'sky' | 'emerald';
 }
 
+type ViewType = 'week' | 'month';
+
 const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentView, setCurrentView] = useState<ViewType>('month');
   const [events] = useState<Event[]>([
     {
       id: '1',
@@ -67,6 +70,90 @@ const Calendar: React.FC = () => {
   };
 
   const days = getDaysInMonth(currentDate);
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'week':
+        return (
+          <div className="min-h-[500px] flex items-center justify-center text-base-content/70">
+            Week view coming soon...
+          </div>
+        );
+      case 'month':
+      default:
+        return (
+          <div className="border border-base-300 rounded-xl">
+            {/* Calendar Header */}
+            <div className="grid grid-cols-7 rounded-t-xl border-b border-base-300">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                <div 
+                  key={day}
+                  className={`
+                    py-3.5 bg-base-200 flex items-center justify-center text-sm font-medium
+                    ${index < 6 ? 'border-r border-base-300' : ''}
+                    ${index === 0 ? 'rounded-tl-xl' : ''}
+                    ${index === 6 ? 'rounded-tr-xl' : ''}
+                  `}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7">
+              {days.map((day, index) => {
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isSelected = isSameDay(day, selectedDate);
+                const hasEvent = events.some(event => event.date === format(day, 'MMM d, yyyy'));
+
+                return (
+                  <div
+                    key={day.toString()}
+                    className={`
+                      relative flex flex-col xl:aspect-square max-xl:min-h-[60px] p-3.5
+                      border-r border-b border-base-300
+                      ${!isCurrentMonth ? 'bg-base-200' : 'bg-base-100'}
+                      ${isSelected ? 'bg-primary/10' : ''}
+                      hover:bg-base-200 cursor-pointer transition-colors
+                      ${index % 7 === 6 ? 'border-r-0' : ''}
+                      ${Math.floor(index / 7) === Math.floor(days.length / 7) - 1 ? 'border-b-0' : ''}
+                      ${index === days.length - 1 ? 'rounded-br-xl' : ''}
+                      ${index === days.length - 7 ? 'rounded-bl-xl' : ''}
+                    `}
+                    onClick={() => setSelectedDate(day)}
+                  >
+                    <span className={`
+                      text-xs font-semibold
+                      ${isCurrentMonth ? 'text-base-content' : 'text-base-content/50'}
+                      ${isSelected ? 'bg-primary text-primary-content w-6 h-6 rounded-full flex items-center justify-center' : ''}
+                    `}>
+                      {format(day, 'd')}
+                    </span>
+
+                    {/* Event Indicators */}
+                    {hasEvent && (
+                      <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                        <div className="flex gap-1">
+                          {events
+                            .filter(event => event.date === format(day, 'MMM d, yyyy'))
+                            .map((event, i) => (
+                              <span
+                                key={event.id}
+                                className={`w-1.5 h-1.5 rounded-full bg-${event.color}-500`}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="p-4">
@@ -126,82 +213,22 @@ const Calendar: React.FC = () => {
                 </div>
               </div>
               <div className="join">
-                <button className="join-item btn btn-sm">Day</button>
-                <button className="join-item btn btn-sm btn-active">Week</button>
-                <button className="join-item btn btn-sm">Month</button>
+                <button 
+                  className={`join-item btn btn-sm ${currentView === 'week' ? 'btn-active' : ''}`}
+                  onClick={() => setCurrentView('week')}
+                >
+                  Week
+                </button>
+                <button 
+                  className={`join-item btn btn-sm ${currentView === 'month' ? 'btn-active' : ''}`}
+                  onClick={() => setCurrentView('month')}
+                >
+                  Month
+                </button>
               </div>
             </div>
 
-            {/* Calendar Grid */}
-            <div className="border border-base-300 rounded-xl">
-              {/* Calendar Header */}
-              <div className="grid grid-cols-7 rounded-t-xl border-b border-base-300">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-                  <div 
-                    key={day}
-                    className={`
-                      py-3.5 bg-base-200 flex items-center justify-center text-sm font-medium
-                      ${index < 6 ? 'border-r border-base-300' : ''}
-                      ${index === 0 ? 'rounded-tl-xl' : ''}
-                      ${index === 6 ? 'rounded-tr-xl' : ''}
-                    `}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar Days */}
-              <div className="grid grid-cols-7">
-                {days.map((day, index) => {
-                  const isCurrentMonth = isSameMonth(day, currentDate);
-                  const isSelected = isSameDay(day, selectedDate);
-                  const hasEvent = events.some(event => event.date === format(day, 'MMM d, yyyy'));
-
-                  return (
-                    <div
-                      key={day.toString()}
-                      className={`
-                        relative flex flex-col xl:aspect-square max-xl:min-h-[60px] p-3.5
-                        border-r border-b border-base-300
-                        ${!isCurrentMonth ? 'bg-base-200' : 'bg-base-100'}
-                        ${isSelected ? 'bg-primary/10' : ''}
-                        hover:bg-base-200 cursor-pointer transition-colors
-                        ${index % 7 === 6 ? 'border-r-0' : ''}
-                        ${Math.floor(index / 7) === Math.floor(days.length / 7) - 1 ? 'border-b-0' : ''}
-                        ${index === days.length - 1 ? 'rounded-br-xl' : ''}
-                        ${index === days.length - 7 ? 'rounded-bl-xl' : ''}
-                      `}
-                      onClick={() => setSelectedDate(day)}
-                    >
-                      <span className={`
-                        text-xs font-semibold
-                        ${isCurrentMonth ? 'text-base-content' : 'text-base-content/50'}
-                        ${isSelected ? 'bg-primary text-primary-content w-6 h-6 rounded-full flex items-center justify-center' : ''}
-                      `}>
-                        {format(day, 'd')}
-                      </span>
-
-                      {/* Event Indicators */}
-                      {hasEvent && (
-                        <div className="absolute bottom-1 left-0 right-0 flex justify-center">
-                          <div className="flex gap-1">
-                            {events
-                              .filter(event => event.date === format(day, 'MMM d, yyyy'))
-                              .map((event, i) => (
-                                <span
-                                  key={event.id}
-                                  className={`w-1.5 h-1.5 rounded-full bg-${event.color}-500`}
-                                />
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {renderView()}
           </div>
         </div>
       </div>
