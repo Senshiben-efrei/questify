@@ -1,11 +1,12 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import PageContainer from '../../components/PageContainer';
 
 const DashboardHome: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <div className="p-4">
+    <PageContainer>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stats Cards */}
         <div className="stats shadow">
@@ -66,7 +67,7 @@ const DashboardHome: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

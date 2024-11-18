@@ -1,10 +1,10 @@
 import React from 'react';
+import PageContainer from '../../components/PageContainer';
 
 const Social: React.FC = () => {
   return (
-    <div className="p-4">
+    <PageContainer>
       <h1 className="text-3xl font-bold text-base-content mb-8">Social & Community</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Friends List */}
         <div className="card bg-base-100 shadow-xl">
@@ -49,7 +49,7 @@ const Social: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

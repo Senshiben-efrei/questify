@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import PageContainer from '../../components/PageContainer';
 import { Area, Project, Task, TaskType, EvaluationMethod } from '../../types';
 import AddAreaModal from '../../components/Areas/AddAreaModal';
 import EditAreaModal from '../../components/Areas/EditAreaModal';
@@ -262,9 +263,8 @@ const TaskSystem: React.FC = () => {
   }
 
   return (
-    <div className="p-4">
+    <PageContainer>
       <h1 className="text-3xl font-bold text-base-content mb-8">Task System</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Management Panel */}
         <div className="card bg-base-100 shadow-xl">
@@ -487,7 +487,7 @@ const TaskSystem: React.FC = () => {
         title="Delete Task"
         message={`Are you sure you want to delete "${taskToDelete?.name}"?`}
       />
-    </div>
+    </PageContainer>
   );
 };
 

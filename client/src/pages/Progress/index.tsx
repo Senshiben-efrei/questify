@@ -1,10 +1,10 @@
 import React from 'react';
+import PageContainer from '../../components/PageContainer';
 
 const Progress: React.FC = () => {
   return (
-    <div className="p-4">
+    <PageContainer>
       <h1 className="text-3xl font-bold text-base-content mb-8">Progress Tracking</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Area Progress */}
         <div className="card bg-base-100 shadow-xl">
@@ -65,7 +65,7 @@ const Progress: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
