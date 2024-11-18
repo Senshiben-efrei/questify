@@ -9,7 +9,8 @@ import {
   isSameMonth,
   isSameDay,
   startOfWeek,
-  endOfWeek
+  endOfWeek,
+  addDays
 } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 
@@ -19,10 +20,105 @@ interface Event {
   date: string;
   time: string;
   description: string;
-  color: 'purple' | 'sky' | 'emerald';
+  color: 'success' | 'warning' | 'info' | 'error';
+}
+
+interface WeekEvent {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  color: 'success' | 'warning' | 'info' | 'error';
+  date: string;
 }
 
 type ViewType = 'week' | 'month';
+
+const HOURS = Array.from({ length: 12 }, (_, i) => {
+  const hour = i + 7; // Start from 7 AM
+  return {
+    display: hour < 12 ? `${hour}:00 am` : `${hour === 12 ? 12 : hour - 12}:00 pm`,
+    value: hour
+  };
+});
+
+const WEEK_EVENTS: WeekEvent[] = [
+  {
+    id: '1',
+    title: 'Morning Workout',
+    startTime: '07:00',
+    endTime: '07:50',
+    color: 'success',
+    date: 'Nov 18, 2024'
+  },
+  {
+    id: '2',
+    title: 'Team Standup',
+    startTime: '09:30',
+    endTime: '10:00',
+    color: 'info',
+    date: 'Nov 19, 2024'
+  },
+  {
+    id: '7',
+    title: 'Team Standup',
+    startTime: '09:30',
+    endTime: '10:00',
+    color: 'info',
+    date: 'Nov 19, 2024'
+  },
+  {
+    id: '3',
+    title: 'Doctor Appointment',
+    startTime: '11:15',
+    endTime: '12:00',
+    color: 'warning',
+    date: 'Nov 20, 2024'
+  },
+  {
+    id: '4',
+    title: 'Lunch with Client',
+    startTime: '12:30',
+    endTime: '13:30',
+    color: 'error',
+    date: 'Nov 21, 2024'
+  },
+  {
+    id: '5',
+    title: 'Project Review',
+    startTime: '08:15',
+    endTime: '09:00',
+    color: 'info',
+    date: 'Nov 22, 2024'
+  },
+  {
+    id: '6',
+    title: 'Yoga Class',
+    startTime: '10:00',
+    endTime: '11:00',
+    color: 'success',
+    date: 'Nov 23, 2024'
+  }
+];
+
+// Add type for event time
+interface EventTime {
+  hour: number;
+  minute: number;
+}
+
+// Add helper function to parse time string
+const parseTime = (timeStr: string): EventTime => {
+  const [hour, minute] = timeStr.split(':').map(Number);
+  return { hour, minute };
+};
+
+// Update the isEventInTimeSlot function
+const isEventInTimeSlot = (event: WeekEvent, slotHour: number): boolean => {
+  const start = parseTime(event.startTime);
+  // Only return true if the event starts in this hour slot
+  return start.hour === slotHour;
+};
 
 const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -32,26 +128,26 @@ const Calendar: React.FC = () => {
     {
       id: '1',
       title: 'Meeting with friends',
-      date: 'Jan 10, 2024',
+      date: 'Nov 20, 2024',
       time: '10:00 - 11:00',
       description: 'Meet-Up for Travel Destination Discussion',
-      color: 'purple'
+      color: 'info'
     },
     {
       id: '2',
       title: 'Visiting online course',
-      date: 'Jan 10, 2024',
+      date: 'Nov 21, 2024',
       time: '05:40 - 13:00',
       description: 'Checks updates for design course',
-      color: 'sky'
+      color: 'success'
     },
     {
       id: '3',
       title: 'Development meet',
-      date: 'Jan 14, 2024',
+      date: 'Nov 22, 2024',
       time: '10:00 - 11:00',
       description: 'Discussion with developer for upcoming project',
-      color: 'emerald'
+      color: 'warning'
     }
   ]);
 
@@ -71,14 +167,142 @@ const Calendar: React.FC = () => {
 
   const days = getDaysInMonth(currentDate);
 
+  const renderEvent = (event: WeekEvent, day: Date) => {
+    // Helper function to get the correct classes based on color
+    const getColorClasses = (color: WeekEvent['color']) => {
+      switch (color) {
+        case 'success':
+          return 'border-success bg-success/10 text-success';
+        case 'warning':
+          return 'border-warning bg-warning/10 text-warning';
+        case 'info':
+          return 'border-info bg-info/10 text-info';
+        case 'error':
+          return 'border-error bg-error/10 text-error';
+        default:
+          return 'border-success bg-success/10 text-success';
+      }
+    };
+
+    const colorClasses = getColorClasses(event.color);
+
+    return (
+      <div 
+        key={event.id}
+        className={`rounded p-1.5 border-l-2 overflow-hidden ${colorClasses} mt-1 mx-1`}
+      >
+        <p className="text-xs font-normal text-base-content mb-px truncate">
+          {event.title}
+        </p>
+        <p className="text-xs font-semibold">
+          {event.startTime} - {event.endTime}
+        </p>
+      </div>
+    );
+  };
+
+  const renderWeekView = () => {
+    const weekStart = startOfWeek(currentDate);
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+    return (
+      <div className="relative">
+        {/* Week Header */}
+        <div className="grid grid-cols-8 border-t border-base-300 sticky top-0 left-0 w-full bg-base-100">
+          <div className="p-3.5 flex items-center justify-center text-sm font-medium"></div>
+          {weekDays.map((day, index) => (
+            <div 
+              key={day.toString()}
+              className={`p-3.5 flex items-center justify-center text-sm font-medium
+                ${isSameDay(day, new Date()) ? 'text-primary' : 'text-base-content'}`}
+            >
+              {format(day, 'MMM d')}
+            </div>
+          ))}
+        </div>
+
+        {/* Time Grid - Desktop */}
+        <div className="hidden sm:grid grid-cols-8 w-full">
+          {HOURS.map(({ display, value }) => {
+            const isPM = display.includes('pm');
+            const hour24 = isPM ? (value === 12 ? 12 : value + 12) : value;
+
+            return (
+              <React.Fragment key={display}>
+                {/* Time Column */}
+                <div className="h-32 lg:h-28 border-t border-r border-base-300">
+                  <div className="h-full flex items-start pt-2">
+                    <span className="text-xs font-semibold text-base-content/60">
+                      {display}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Time Slots */}
+                {weekDays.map((day) => (
+                  <div 
+                    key={`${day}-${display}`}
+                    className="h-32 lg:h-28 border-t border-r border-base-300 
+                      transition-all hover:bg-base-200 relative"
+                  >
+                    {WEEK_EVENTS
+                      .filter(event => 
+                        isEventInTimeSlot(event, hour24) && 
+                        event.date === format(day, 'MMM d, yyyy')
+                      )
+                      .map(event => renderEvent(event, day))}
+                  </div>
+                ))}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Time Grid - Mobile */}
+        <div className="flex sm:hidden border-t border-base-300">
+          <div className="flex flex-col">
+            {HOURS.map(({ display, value }) => (
+              <div 
+                key={display}
+                className="w-20 h-20 border-b border-r border-base-300"
+              >
+                <div className="h-full flex items-start pt-2 px-2">
+                  <span className="text-xs font-semibold text-base-content/60">
+                    {display}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 w-full">
+            {HOURS.map(({ display, value }) => {
+              const isPM = display.includes('pm');
+              const hour24 = isPM ? (value === 12 ? 12 : value + 12) : value;
+
+              return (
+                <div 
+                  key={display}
+                  className="w-full h-20 border-b border-base-300 relative"
+                >
+                  {WEEK_EVENTS
+                    .filter(event => 
+                      isEventInTimeSlot(event, hour24) && 
+                      event.date === format(new Date(), 'MMM d, yyyy')
+                    )
+                    .map(event => renderEvent(event, new Date()))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'week':
-        return (
-          <div className="min-h-[500px] flex items-center justify-center text-base-content/70">
-            Week view coming soon...
-          </div>
-        );
+        return renderWeekView();
       case 'month':
       default:
         return (
@@ -140,7 +364,7 @@ const Calendar: React.FC = () => {
                             .map((event, i) => (
                               <span
                                 key={event.id}
-                                className={`w-1.5 h-1.5 rounded-full bg-${event.color}-500`}
+                                className={`w-1.5 h-1.5 rounded-full bg-${event.color}`}
                               />
                             ))}
                         </div>
@@ -168,7 +392,7 @@ const Calendar: React.FC = () => {
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2.5">
-                      <span className={`w-2.5 h-2.5 rounded-full bg-${event.color}-500`}></span>
+                      <span className={`w-2.5 h-2.5 rounded-full bg-${event.color}`}></span>
                       <p className="text-base font-medium text-base-content">{event.date} - {event.time}</p>
                     </div>
                     <div className="dropdown dropdown-end">
