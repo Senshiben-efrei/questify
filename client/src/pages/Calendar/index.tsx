@@ -383,6 +383,7 @@ const Calendar: React.FC = () => {
   const timeGridRef = React.useRef<HTMLDivElement>(null);
   const [selectedEvent, setSelectedEvent] = useState<(Event | WeekEvent) | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedWeekDay, setSelectedWeekDay] = useState<Date>(new Date());
 
   const handlePrevious = () => {
     if (currentView === 'month') {
@@ -446,99 +447,108 @@ const Calendar: React.FC = () => {
     return (
       <div className="relative">
         {/* Week Header - Fixed */}
-        <div className="grid grid-cols-8 border-t border-base-300 sticky top-0 left-0 w-full bg-base-100 z-10">
+        <div className="grid grid-cols-8 border-t border-base-300 sticky top-0 left-0 w-full bg-base-100 z-10 pr-[10px]">
           <div className="p-3.5 flex items-center justify-center text-sm font-medium"></div>
           {weekDays.map((day) => (
             <div 
               key={day.toString()}
-              className={`p-3.5 flex items-center justify-center text-sm font-medium
-                ${isSameDay(day, today) ? 'text-base-content font-bold bg-base-content/10' : 'text-base-content'}`}
+              onClick={() => setSelectedWeekDay(day)}
+              className={`p-3.5 flex items-center justify-center text-sm font-medium cursor-pointer
+                ${isSameDay(day, today) ? 'text-base-content font-bold bg-base-content/10' : 'text-base-content'}
+                ${isSameDay(day, selectedWeekDay) ? 'sm:bg-transparent bg-base-content/5' : ''}
+              `}
             >
               {format(day, 'MMM d')}
             </div>
           ))}
         </div>
 
-        {/* Time Grid - Desktop */}
-        <div className="hidden sm:grid grid-cols-8 w-full relative">
-          {/* Add time indicator if current week is being viewed */}
-          {weekDays.some(day => isSameDay(day, today)) && (
-            <TimeIndicator containerRef={timeGridRef} />
-          )}
+        {/* Scrollable Container */}
+        <div 
+          ref={timeGridRef}
+          className="overflow-y-auto max-h-[calc(100vh-16rem)] scrollbar-thin scrollbar-thumb-base-content/10 scrollbar-track-transparent hover:scrollbar-thumb-base-content/20"
+        >
+          {/* Time Grid - Desktop */}
+          <div className="hidden sm:grid grid-cols-8 w-full relative">
+            {/* Add time indicator if current week is being viewed */}
+            {weekDays.some(day => isSameDay(day, today)) && (
+              <TimeIndicator containerRef={timeGridRef} />
+            )}
 
-          {HOURS.map(({ display, value }) => {
-            const hour24 = value;
+            {HOURS.map(({ display, value }) => {
+              const hour24 = value;
 
-            return (
-              <React.Fragment key={display}>
-                {/* Time Column */}
-                <div className="h-32 lg:h-28 border-t border-r border-base-300 sticky left-0 bg-base-100">
-                  <div className="h-full flex items-start pt-2 pl-2">
+              return (
+                <React.Fragment key={display}>
+                  {/* Time Column */}
+                  <div className="h-32 lg:h-28 border-t border-r border-base-300 sticky left-0 bg-base-100">
+                    <div className="h-full flex items-start pt-2 pl-2">
+                      <span className="text-xs font-semibold text-base-content/60">
+                        {display}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Time Slots */}
+                  {weekDays.map((day) => (
+                    <div 
+                      key={`${day}-${display}`}
+                      className={`h-32 lg:h-28 border-t border-r border-base-300 
+                        transition-all hover:bg-base-200 relative
+                        ${isSameDay(day, today) ? 'bg-base-content/5' : ''}`}
+                    >
+                      {WEEK_EVENTS
+                        .filter(event => 
+                          isEventInTimeSlot(event, hour24) && 
+                          event.date === format(day, 'MMM d, yyyy')
+                        )
+                        .map(event => renderEvent(event, day))}
+                    </div>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Mobile Grid - Single Day View */}
+          <div className="flex sm:hidden border-t border-base-300 relative">
+            {/* Add time indicator for mobile if viewing selected day */}
+            {isSameDay(selectedWeekDay, today) && (
+              <TimeIndicator containerRef={timeGridRef} />
+            )}
+            <div className="flex flex-col">
+              {HOURS.map(({ display, value }) => (
+                <div 
+                  key={display}
+                  className="w-20 h-20 border-b border-r border-base-300 sticky left-0 bg-base-100"
+                >
+                  <div className="h-full flex items-start pt-2 px-2">
                     <span className="text-xs font-semibold text-base-content/60">
                       {display}
                     </span>
                   </div>
                 </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 w-full">
+              {HOURS.map(({ display, value }) => {
+                const hour24 = value;
 
-                {/* Time Slots */}
-                {weekDays.map((day) => (
+                return (
                   <div 
-                    key={`${day}-${display}`}
-                    className={`h-32 lg:h-28 border-t border-r border-base-300 
-                      transition-all hover:bg-base-200 relative
-                      ${isSameDay(day, today) ? 'bg-base-content/5' : ''}`}
+                    key={display}
+                    className="w-full h-20 border-b border-base-300 relative"
                   >
                     {WEEK_EVENTS
                       .filter(event => 
                         isEventInTimeSlot(event, hour24) && 
-                        event.date === format(day, 'MMM d, yyyy')
+                        event.date === format(selectedWeekDay, 'MMM d, yyyy')
                       )
-                      .map(event => renderEvent(event, day))}
+                      .map(event => renderEvent(event, selectedWeekDay))}
                   </div>
-                ))}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* Time Grid - Mobile */}
-        <div className="flex sm:hidden border-t border-base-300 relative">
-          {/* Add time indicator for mobile if viewing today */}
-          {isSameDay(new Date(), today) && (
-            <TimeIndicator containerRef={timeGridRef} />
-          )}
-          <div className="flex flex-col">
-            {HOURS.map(({ display, value }) => (
-              <div 
-                key={display}
-                className="w-20 h-20 border-b border-r border-base-300 sticky left-0 bg-base-100"
-              >
-                <div className="h-full flex items-start pt-2 px-2">
-                  <span className="text-xs font-semibold text-base-content/60">
-                    {display}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 w-full">
-            {HOURS.map(({ display, value }) => {
-              const hour24 = value;
-
-              return (
-                <div 
-                  key={display}
-                  className="w-full h-20 border-b border-base-300 relative"
-                >
-                  {WEEK_EVENTS
-                    .filter(event => 
-                      isEventInTimeSlot(event, hour24) && 
-                      event.date === format(new Date(), 'MMM d, yyyy')
-                    )
-                    .map(event => renderEvent(event, new Date()))}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -677,6 +687,10 @@ const Calendar: React.FC = () => {
       </div>
     </div>
   );
+
+  useEffect(() => {
+    setSelectedWeekDay(currentDate);
+  }, [currentDate]);
 
   return (
     <PageContainer>

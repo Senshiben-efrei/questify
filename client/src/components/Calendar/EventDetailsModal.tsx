@@ -59,6 +59,21 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     }
   };
 
+  const getBorderClass = (status: string) => {
+    switch (status) {
+      case 'due':
+        return 'border-error/10';
+      case 'pending':
+        return 'border-warning/10';
+      case 'done':
+        return 'border-success/10';
+      case 'upcoming':
+        return 'border-info/10';
+      default:
+        return 'border-base-300/10';
+    }
+  };
+
   return (
     <Modal 
       isOpen={isOpen} 
@@ -96,7 +111,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         </div>
 
         {/* Time details */}
-        <div className="space-y-3 bg-base-100/10 rounded-lg p-6 backdrop-blur-sm">
+        <div className={`space-y-3 bg-base-100/5 rounded-lg p-6 border ${getBorderClass(event.status)}`}>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-white/70">Date:</span>
             <span className="text-sm text-white">{event.date}</span>
@@ -111,23 +126,13 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
         {/* Description */}
         {event.description && (
-          <div className="space-y-3 bg-base-100/10 rounded-lg p-6 backdrop-blur-sm">
+          <div className={`space-y-3 bg-base-100/5 rounded-lg p-6 border ${getBorderClass(event.status)}`}>
             <span className="text-sm font-medium text-white/70">Description:</span>
             <p className="text-sm text-white whitespace-pre-wrap">
               {event.description}
             </p>
           </div>
         )}
-
-        {/* Action buttons */}
-        <div className="flex justify-end gap-3 pt-4">
-          <button 
-            className={`btn ${getStatusClasses(event.status)} border bg-base-100/10 hover:bg-base-200/10 px-6`} 
-            onClick={onClose}
-          >
-            Close
-          </button>
-        </div>
       </div>
     </Modal>
   );
