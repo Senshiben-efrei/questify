@@ -9,6 +9,7 @@ import Social from '../pages/Social';
 import Progress from '../pages/Progress';
 import Calendar from '../pages/Calendar';
 import Dashboard from '../pages/Dashboard';
+import Profile from '../pages/Profile';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/social" element={<ProtectedRoute><Social /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
