@@ -625,6 +625,12 @@ const Dashboard: React.FC = () => {
         title="Delete Task"
         message={`Are you sure you want to delete "${taskToDelete?.name}"? This action cannot be undone.`}
       />
+
+      <AddAreaModal
+        isOpen={isAddAreaModalOpen}
+        onClose={() => setIsAddAreaModalOpen(false)}
+        onSubmit={handleAddArea}
+      />
     </div>
   );
 };
