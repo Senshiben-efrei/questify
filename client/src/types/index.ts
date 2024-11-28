@@ -50,6 +50,9 @@ export interface QueueCooldown {
 export type QueueItem = {
   id: string;
   type: QueueItemType;
+  sub_task_id?: string;
+  has_duration?: boolean;
+  duration_minutes?: number;
 } & (QueueSubTask | QueueCooldown);
 
 export interface QueueIteration {

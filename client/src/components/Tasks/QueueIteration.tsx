@@ -1,11 +1,7 @@
 import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
-import { 
-  Task, 
-  QueueItem, 
-  QueueItemType 
-} from '../../types/index';
-import { XMarkIcon, ArrowsUpDownIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Task, QueueItem } from '../../types';
+import { XMarkIcon, ArrowsUpDownIcon, PlusIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 interface QueueIterationProps {
   id: string;
@@ -40,63 +36,47 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
   onRemoveIteration,
   onToggleCooldown
 }) => {
-  const handleToggleCooldown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onToggleCooldown();
-  };
-
   return (
-    <div className="border rounded-lg p-4 mb-4">
-      <div className="flex justify-between items-center mb-4">
+    <div className="space-y-4 p-4 bg-base-200/50 rounded-lg">
+      <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">
           {frequency === 'daily' && `Day ${position + 1}`}
           {frequency === 'weekly' && `Week ${position + 1}`}
           {frequency === 'monthly' && `Month ${position + 1}`}
         </h3>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleToggleCooldown}
-            className={`px-3 py-1 rounded-md text-sm ${
-              isCooldown 
-                ? 'bg-yellow-100 text-yellow-800' 
-                : 'bg-gray-100 text-gray-600'
-            }`}
+            onClick={onToggleCooldown}
+            className="btn btn-sm btn-ghost"
           >
             Rest Day
           </button>
           <button
             type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onRemoveIteration();
-            }}
-            className="text-gray-400 hover:text-red-500"
+            onClick={onRemoveIteration}
+            className="btn btn-sm btn-ghost btn-error"
           >
-            <XMarkIcon className="h-5 w-5" />
+            <XMarkIcon className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {isCooldown ? (
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              value={cooldownDescription}
-              onChange={(e) => onUpdateCooldown(cooldownDuration, e.target.value)}
-              placeholder="Rest Day Description"
-              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-            />
-            <input
-              type="time"
-              value={cooldownDuration}
-              onChange={(e) => onUpdateCooldown(e.target.value, cooldownDescription)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-            />
-          </div>
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            value={cooldownDescription}
+            onChange={(e) => onUpdateCooldown(cooldownDuration, e.target.value)}
+            placeholder="Rest Day Description"
+            className="input input-bordered flex-1"
+          />
+          <input
+            type="time"
+            value={cooldownDuration}
+            onChange={(e) => onUpdateCooldown(e.target.value, cooldownDescription)}
+            className="input input-bordered w-32"
+          />
         </div>
       ) : (
         <>
@@ -117,64 +97,66 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
-                        className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg"
+                        className="flex flex-col gap-2 p-4 bg-base-100/50 rounded-lg"
                       >
-                        <div
-                          {...provided.dragHandleProps}
-                          className="cursor-move text-gray-400 hover:text-gray-600"
-                        >
-                          <ArrowsUpDownIcon className="h-5 w-5" />
+                        <div className="flex items-center gap-4">
+                          <div
+                            {...provided.dragHandleProps}
+                            className="cursor-move text-base-content/70 hover:text-base-content"
+                          >
+                            <ArrowsUpDownIcon className="h-5 w-5" />
+                          </div>
+
+                          <span className="text-base-content/70 font-medium">#{index + 1}</span>
+
+                          <select
+                            value={item.sub_task_id || ''}
+                            onChange={(e) => onUpdateQueueItem(index, { sub_task_id: e.target.value })}
+                            className="select select-bordered flex-1"
+                          >
+                            <option value="">Select a sub-task</option>
+                            {availableSubTasks.map(subTask => (
+                              <option key={subTask.id} value={subTask.id}>
+                                {subTask.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={() => onUpdateQueueItem(index, { 
+                              has_duration: !item.has_duration 
+                            })}
+                            className={`btn btn-sm btn-ghost ${item.has_duration ? 'text-primary' : 'text-base-content/70'}`}
+                            title="Toggle duration"
+                          >
+                            <ClockIcon className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onRemoveQueueItem(index)}
+                            className="btn btn-sm btn-ghost text-error"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
                         </div>
 
-                        <span className="text-gray-500 font-medium">#{index + 1}</span>
-
-                        {item.type === QueueItemType.SUB_TASK ? (
-                          <>
-                            <select
-                              value={(item as any).sub_task_id}
-                              onChange={(e) => onUpdateQueueItem(index, { sub_task_id: e.target.value })}
-                              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                            >
-                              <option value="">Select a sub-task</option>
-                              {availableSubTasks.map(subTask => (
-                                <option key={subTask.id} value={subTask.id}>
-                                  {subTask.name}
-                                </option>
-                              ))}
-                            </select>
-
+                        {item.has_duration && (
+                          <div className="flex items-center gap-4 pl-14">
                             <input
-                              type="time"
-                              value={(item as any).execution_time}
-                              onChange={(e) => onUpdateQueueItem(index, { execution_time: e.target.value })}
-                              className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                              type="number"
+                              value={item.duration_minutes || ''}
+                              onChange={(e) => onUpdateQueueItem(index, { 
+                                duration_minutes: parseInt(e.target.value) || 0 
+                              })}
+                              placeholder="Duration in minutes"
+                              className="input input-bordered input-sm w-40"
+                              min="1"
                             />
-                          </>
-                        ) : (
-                          <>
-                            <input
-                              type="text"
-                              value={(item as any).description || ''}
-                              onChange={(e) => onUpdateQueueItem(index, { description: e.target.value })}
-                              placeholder="Rest Day Description"
-                              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                            />
-                            <input
-                              type="time"
-                              value={(item as any).duration}
-                              onChange={(e) => onUpdateQueueItem(index, { duration: e.target.value })}
-                              className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                            />
-                          </>
+                            <span className="text-sm text-base-content/70">minutes</span>
+                          </div>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() => onRemoveQueueItem(index)}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                        </button>
                       </div>
                     )}
                   </Draggable>
@@ -188,9 +170,9 @@ const QueueIteration: React.FC<QueueIterationProps> = ({
             <button
               type="button"
               onClick={onAddSubTask}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              className="btn btn-sm btn-primary"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <PlusIcon className="h-4 w-4 mr-2" />
               Add Sub-Task
             </button>
           </div>

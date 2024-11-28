@@ -15,6 +15,11 @@ const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onSubmit }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -47,12 +52,14 @@ const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onSubmit }
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Name</span>
+            <span className="label-text-alt text-error">Required</span>
           </label>
           <input
             type="text"
             className="input bg-base-200/50 border-base-content/10"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Enter area name"
             required
           />
         </div>
@@ -60,13 +67,20 @@ const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onSubmit }
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Description</span>
+            <span className="label-text-alt text-base-content/70">Optional</span>
           </label>
           <textarea
             className="textarea bg-base-200/50 border-base-content/10"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter area description"
             rows={3}
           />
+          <label className="label">
+            <span className="label-text-alt text-base-content/70">
+              Describe the purpose and goals of this area
+            </span>
+          </label>
         </div>
 
         <div className="flex justify-end gap-2">

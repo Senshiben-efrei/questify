@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
-import { Area, Project } from '../../types';
+import { Area, Project, Task } from '../../types';
+import QueueManager from './QueueManager';
 
 interface AddPlaceholderTaskModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface AddPlaceholderTaskModalProps {
   onSubmit: (data: { taskData: any, endpoint: string }) => Promise<void>;
   areas: Area[];
   projects: Project[];
+  availableSubTasks: Task[];
 }
 
 const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({ 
@@ -15,39 +17,69 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
   onClose, 
   onSubmit,
   areas,
-  projects 
+  projects,
+  availableSubTasks
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [areaId, setAreaId] = useState('');
-  const [projectId, setProjectId] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [iterations, setIterations] = useState<any[]>([{
+    id: crypto.randomUUID(),
+    position: 0,
+    items: []
+  }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
 
     const taskData = {
       name,
       description,
-      area_id: areaId || null,
-      project_id: projectId || null,
+      is_recurring: isRecurring,
+      frequency: isRecurring ? frequency : null,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      queue: {
+        iterations,
+        rotation_type: "sequential"
+      }
     };
+
+    setLoading(true);
+    setError('');
 
     try {
       await onSubmit({ taskData, endpoint: 'placeholder' });
-      setName('');
-      setDescription('');
-      setAreaId('');
-      setProjectId('');
+      resetForm();
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to create placeholder task');
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setIsRecurring(false);
+    setFrequency('');
+    setStartDate('');
+    setEndDate('');
+    setIterations([{
+      id: crypto.randomUUID(),
+      position: 0,
+      items: []
+    }]);
   };
 
   return (
@@ -64,15 +96,18 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
           </div>
         )}
 
+        {/* Basic Information */}
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Name</span>
+            <span className="label-text-alt text-error">Required</span>
           </label>
           <input
             type="text"
             className="input bg-base-200/50 border-base-content/10"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Enter task name"
             required
           />
         </div>
@@ -80,57 +115,96 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Description</span>
+            <span className="label-text-alt text-base-content/70">Optional</span>
           </label>
           <textarea
             className="textarea bg-base-200/50 border-base-content/10"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter task description"
             rows={3}
           />
         </div>
 
+        {/* Recurrence */}
         <div className="form-control">
-          <label className="label">
-            <span className="label-text text-white">Area</span>
+          <label className="label cursor-pointer">
+            <span className="label-text text-white">Recurring Task</span>
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={isRecurring}
+              onChange={(e) => {
+                setIsRecurring(e.target.checked);
+                if (!e.target.checked) setFrequency('');
+              }}
+            />
           </label>
-          <select
-            className="select bg-base-200/50 border-base-content/10"
-            value={areaId}
-            onChange={(e) => {
-              setAreaId(e.target.value);
-              setProjectId('');
-            }}
-          >
-            <option value="">None</option>
-            {areas.map(area => (
-              <option key={area.id} value={area.id}>
-                {area.name}
-              </option>
-            ))}
-          </select>
         </div>
 
+        {isRecurring && (
+          <>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-white">Frequency</span>
+                <span className="label-text-alt text-error">Required</span>
+              </label>
+              <select
+                className="select bg-base-200/50 border-base-content/10"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                required
+              >
+                <option value="">Select frequency</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-white">Start Date</span>
+                </label>
+                <input
+                  type="date"
+                  className="input bg-base-200/50 border-base-content/10"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-white">End Date</span>
+                </label>
+                <input
+                  type="date"
+                  className="input bg-base-200/50 border-base-content/10"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Queue Management */}
         <div className="form-control">
           <label className="label">
-            <span className="label-text text-white">Project</span>
+            <span className="label-text text-white">Queue Management</span>
           </label>
-          <select
-            className="select bg-base-200/50 border-base-content/10"
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            disabled={!areaId}
-          >
-            <option value="">None</option>
-            {projects
-              .filter(project => project.area_id === areaId)
-              .map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-          </select>
+          <QueueManager
+            iterations={iterations}
+            onIterationsUpdate={setIterations}
+            availableSubTasks={availableSubTasks}
+            frequency={frequency}
+          />
         </div>
 
+        {/* Action Buttons */}
         <div className="flex justify-end gap-2">
           <button 
             type="button" 

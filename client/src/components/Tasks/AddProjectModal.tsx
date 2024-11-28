@@ -18,6 +18,15 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
+    if (!areaId) {
+      setError('Area is required');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -50,32 +59,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
 
         <div className="form-control">
           <label className="label">
-            <span className="label-text text-white">Name</span>
-          </label>
-          <input
-            type="text"
-            className="input bg-base-200/50 border-base-content/10"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text text-white">Description</span>
-          </label>
-          <textarea
-            className="textarea bg-base-200/50 border-base-content/10"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-          />
-        </div>
-
-        <div className="form-control">
-          <label className="label">
             <span className="label-text text-white">Area</span>
+            <span className="label-text-alt text-error">Required</span>
           </label>
           <select
             className="select bg-base-200/50 border-base-content/10"
@@ -90,6 +75,45 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
               </option>
             ))}
           </select>
+          <label className="label">
+            <span className="label-text-alt text-base-content/70">
+              The area this project belongs to
+            </span>
+          </label>
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text text-white">Name</span>
+            <span className="label-text-alt text-error">Required</span>
+          </label>
+          <input
+            type="text"
+            className="input bg-base-200/50 border-base-content/10"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter project name"
+            required
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text text-white">Description</span>
+            <span className="label-text-alt text-base-content/70">Optional</span>
+          </label>
+          <textarea
+            className="textarea bg-base-200/50 border-base-content/10"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter project description"
+            rows={3}
+          />
+          <label className="label">
+            <span className="label-text-alt text-base-content/70">
+              Describe the goals and scope of this project
+            </span>
+          </label>
         </div>
 
         <div className="flex justify-end gap-2">

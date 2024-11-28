@@ -23,13 +23,22 @@ const AddStandaloneTaskModal: React.FC<AddStandaloneTaskModalProps> = ({
   const [projectId, setProjectId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('');
+  const [evaluationMethod, setEvaluationMethod] = useState('YES_NO');
+  const [targetValue, setTargetValue] = useState('');
+  const [executionTime, setExecutionTime] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hasSpecificTime, setHasSpecificTime] = useState(false);
+  const [executionTimeOfDay, setExecutionTimeOfDay] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
 
     const taskData = {
       name,
@@ -37,23 +46,43 @@ const AddStandaloneTaskModal: React.FC<AddStandaloneTaskModalProps> = ({
       area_id: areaId || null,
       project_id: projectId || null,
       is_recurring: isRecurring,
-      frequency: isRecurring ? frequency : null
+      frequency: isRecurring ? frequency : null,
+      evaluation_method: evaluationMethod,
+      target_value: evaluationMethod === 'NUMERIC' ? parseFloat(targetValue) : null,
+      execution_time: executionTime ? parseInt(executionTime) : null,
+      execution_time_of_day: hasSpecificTime ? executionTimeOfDay : null,
+      start_date: startDate || null,
+      end_date: endDate || null
     };
+
+    setLoading(true);
+    setError('');
 
     try {
       await onSubmit({ taskData, endpoint: 'standalone' });
-      setName('');
-      setDescription('');
-      setAreaId('');
-      setProjectId('');
-      setIsRecurring(false);
-      setFrequency('');
+      resetForm();
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to create standalone task');
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setAreaId('');
+    setProjectId('');
+    setIsRecurring(false);
+    setFrequency('');
+    setEvaluationMethod('YES_NO');
+    setTargetValue('');
+    setExecutionTime('');
+    setStartDate('');
+    setEndDate('');
+    setHasSpecificTime(false);
+    setExecutionTimeOfDay('');
   };
 
   return (
@@ -70,15 +99,18 @@ const AddStandaloneTaskModal: React.FC<AddStandaloneTaskModalProps> = ({
           </div>
         )}
 
+        {/* Basic Information */}
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Name</span>
+            <span className="label-text-alt text-error">Required</span>
           </label>
           <input
             type="text"
             className="input bg-base-200/50 border-base-content/10"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Enter task name"
             required
           />
         </div>
@@ -86,15 +118,18 @@ const AddStandaloneTaskModal: React.FC<AddStandaloneTaskModalProps> = ({
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Description</span>
+            <span className="label-text-alt text-base-content/70">Optional</span>
           </label>
           <textarea
             className="textarea bg-base-200/50 border-base-content/10"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter task description"
             rows={3}
           />
         </div>
 
+        {/* Area and Project Selection */}
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Area</span>
@@ -137,6 +172,100 @@ const AddStandaloneTaskModal: React.FC<AddStandaloneTaskModalProps> = ({
           </select>
         </div>
 
+        {/* Evaluation Method */}
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text text-white">Evaluation Method</span>
+          </label>
+          <select
+            className="select bg-base-200/50 border-base-content/10"
+            value={evaluationMethod}
+            onChange={(e) => setEvaluationMethod(e.target.value)}
+          >
+            <option value="YES_NO">Yes/No</option>
+            <option value="NUMERIC">Numeric</option>
+          </select>
+        </div>
+
+        {evaluationMethod === 'NUMERIC' && (
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text text-white">Target Value</span>
+              <span className="label-text-alt text-error">Required</span>
+            </label>
+            <input
+              type="number"
+              className="input bg-base-200/50 border-base-content/10"
+              value={targetValue}
+              onChange={(e) => setTargetValue(e.target.value)}
+              placeholder="Enter target value"
+              required
+            />
+          </div>
+        )}
+
+        {/* Time of Day */}
+        <div className="form-control">
+          <label className="label cursor-pointer">
+            <span className="label-text text-white">Specific Time of Day</span>
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={hasSpecificTime}
+              onChange={(e) => {
+                setHasSpecificTime(e.target.checked);
+                if (!e.target.checked) {
+                  setExecutionTimeOfDay('');
+                  setExecutionTime(''); // Clear both time fields when toggled off
+                }
+              }}
+            />
+          </label>
+        </div>
+
+        {hasSpecificTime && (
+          <>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-white">Time of Day</span>
+                <span className="label-text-alt text-base-content/70">HH:MM</span>
+              </label>
+              <input
+                type="time"
+                className="input bg-base-200/50 border-base-content/10"
+                value={executionTimeOfDay}
+                onChange={(e) => setExecutionTimeOfDay(e.target.value)}
+                required={hasSpecificTime}
+              />
+              <label className="label">
+                <span className="label-text-alt text-base-content/70">
+                  The time when this task should be executed
+                </span>
+              </label>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-white">Execution Duration (minutes)</span>
+              </label>
+              <input
+                type="number"
+                className="input bg-base-200/50 border-base-content/10"
+                value={executionTime}
+                onChange={(e) => setExecutionTime(e.target.value)}
+                placeholder="Enter execution duration"
+                min="1"
+              />
+              <label className="label">
+                <span className="label-text-alt text-base-content/70">
+                  How long this task typically takes to complete
+                </span>
+              </label>
+            </div>
+          </>
+        )}
+
+        {/* Recurrence */}
         <div className="form-control">
           <label className="label cursor-pointer">
             <span className="label-text text-white">Recurring Task</span>
@@ -153,24 +282,55 @@ const AddStandaloneTaskModal: React.FC<AddStandaloneTaskModalProps> = ({
         </div>
 
         {isRecurring && (
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-white">Frequency</span>
-            </label>
-            <select
-              className="select bg-base-200/50 border-base-content/10"
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              required={isRecurring}
-            >
-              <option value="">Select frequency</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </div>
+          <>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-white">Frequency</span>
+                <span className="label-text-alt text-error">Required</span>
+              </label>
+              <select
+                className="select bg-base-200/50 border-base-content/10"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                required
+              >
+                <option value="">Select frequency</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-white">Start Date</span>
+                </label>
+                <input
+                  type="date"
+                  className="input bg-base-200/50 border-base-content/10"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-white">End Date</span>
+                </label>
+                <input
+                  type="date"
+                  className="input bg-base-200/50 border-base-content/10"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate}
+                />
+              </div>
+            </div>
+          </>
         )}
 
+        {/* Action Buttons */}
         <div className="flex justify-end gap-2">
           <button 
             type="button" 
