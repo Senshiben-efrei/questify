@@ -3,13 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   HomeIcon,
-  ClipboardDocumentListIcon,
-  UsersIcon,
-  ChartBarIcon,
-  CalendarIcon,
+  WrenchScrewdriverIcon,
+  UserCircleIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 
 const Sidebar = () => {
@@ -18,11 +17,10 @@ const Sidebar = () => {
 
   const authenticatedNavigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
-    { name: 'Task System', href: '/tasks', icon: ClipboardDocumentListIcon },
-    { name: 'Social', href: '/social', icon: UsersIcon },
-    { name: 'Progress', href: '/progress', icon: ChartBarIcon },
+    { name: 'Setup', href: '/setup', icon: WrenchScrewdriverIcon },
     { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
-    { name: 'Manage', href: '/manage', icon: Cog6ToothIcon },
+    { name: 'Profile', href: '/profile', icon: UserCircleIcon },
+    { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
   ];
 
   const publicNavigation = [
@@ -56,7 +54,7 @@ const Sidebar = () => {
                 />
                 {item.name}
               </Link>
-            )
+            );
           })}
         </nav>
       </div>

@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
-import { Area, Project, Task } from '../../types';
+import { Area } from '../../types/area';
+import { Project } from '../../types/project';
+import { Queue } from '../../types/routine';
 import QueueManager from './QueueManager';
 
-interface AddPlaceholderTaskModalProps {
+interface AddRoutineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { taskData: any, endpoint: string }) => Promise<void>;
+  onSubmit: (data: any) => Promise<void>;
   areas: Area[];
   projects: Project[];
-  availableSubTasks: Task[];
 }
 
-const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const AddRoutineModal: React.FC<AddRoutineModalProps> = ({
+  isOpen,
+  onClose,
   onSubmit,
   areas,
-  projects,
-  availableSubTasks
+  projects
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -26,13 +26,12 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
   const [frequency, setFrequency] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [iterations, setIterations] = useState<any[]>([{
-    id: crypto.randomUUID(),
-    position: 0,
-    items: []
-  }]);
-  const [loading, setLoading] = useState(false);
+  const [queue, setQueue] = useState<Queue>({
+    iterations: [],
+    rotation_type: 'sequential'
+  });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,55 +40,43 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
       return;
     }
 
-    const taskData = {
+    if (isRecurring && !frequency) {
+      setError('Frequency is required for recurring routines');
+      return;
+    }
+
+    const routineData = {
       name,
       description,
       is_recurring: isRecurring,
       frequency: isRecurring ? frequency : null,
       start_date: startDate || null,
       end_date: endDate || null,
-      queue: {
-        iterations,
-        rotation_type: "sequential"
-      }
+      queue
     };
 
     setLoading(true);
     setError('');
 
     try {
-      await onSubmit({ taskData, endpoint: 'placeholder' });
-      resetForm();
+      await onSubmit(routineData);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to create placeholder task');
+      setError(err.message || 'Failed to create routine');
     } finally {
       setLoading(false);
     }
-  };
-
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setIsRecurring(false);
-    setFrequency('');
-    setStartDate('');
-    setEndDate('');
-    setIterations([{
-      id: crypto.randomUUID(),
-      position: 0,
-      items: []
-    }]);
   };
 
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Add Placeholder Task"
+      title="Add New Routine"
       className="bg-base-100/30 backdrop-blur-md border border-base-content/10"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Error display */}
         {error && (
           <div className="alert alert-error bg-error/10 border border-error/20">
             <span>{error}</span>
@@ -107,7 +94,7 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
             className="input bg-base-200/50 border-base-content/10"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter task name"
+            placeholder="Enter routine name"
             required
           />
         </div>
@@ -115,29 +102,25 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
         <div className="form-control">
           <label className="label">
             <span className="label-text text-white">Description</span>
-            <span className="label-text-alt text-base-content/70">Optional</span>
           </label>
           <textarea
             className="textarea bg-base-200/50 border-base-content/10"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter task description"
+            placeholder="Enter routine description"
             rows={3}
           />
         </div>
 
-        {/* Recurrence */}
+        {/* Recurrence Settings */}
         <div className="form-control">
           <label className="label cursor-pointer">
-            <span className="label-text text-white">Recurring Task</span>
+            <span className="label-text text-white">Recurring Routine</span>
             <input
               type="checkbox"
               className="toggle"
               checked={isRecurring}
-              onChange={(e) => {
-                setIsRecurring(e.target.checked);
-                if (!e.target.checked) setFrequency('');
-              }}
+              onChange={(e) => setIsRecurring(e.target.checked)}
             />
           </label>
         </div>
@@ -147,7 +130,6 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
             <div className="form-control">
               <label className="label">
                 <span className="label-text text-white">Frequency</span>
-                <span className="label-text-alt text-error">Required</span>
               </label>
               <select
                 className="select bg-base-200/50 border-base-content/10"
@@ -197,10 +179,10 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
             <span className="label-text text-white">Queue Management</span>
           </label>
           <QueueManager
-            iterations={iterations}
-            onIterationsUpdate={setIterations}
-            availableSubTasks={availableSubTasks}
-            frequency={frequency}
+            queue={queue}
+            areas={areas}
+            projects={projects}
+            onChange={setQueue}
           />
         </div>
 
@@ -215,10 +197,10 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
           </button>
           <button 
             type="submit" 
-            className="btn bg-success/75 border-success/75 hover:bg-success/65 hover:border-success/65 text-white"
+            className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Create Task'}
+            {loading ? 'Creating...' : 'Create Routine'}
           </button>
         </div>
       </form>
@@ -226,4 +208,4 @@ const AddPlaceholderTaskModal: React.FC<AddPlaceholderTaskModalProps> = ({
   );
 };
 
-export default AddPlaceholderTaskModal; 
+export default AddRoutineModal; 

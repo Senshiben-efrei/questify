@@ -1,29 +1,53 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from '../components/ProtectedRoute';
+
+// Pages
+import Dashboard from '../pages/Dashboard';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
-import ProtectedRoute from '../components/ProtectedRoute';
-import DashboardHome from '../pages/DashboardHome';
-import TaskSystem from '../pages/TaskSystem';
-import Social from '../pages/Social';
-import Progress from '../pages/Progress';
-import Calendar from '../pages/Calendar';
-import Dashboard from '../pages/Dashboard';
+import SetupPage from '../pages/SetupPage';
 import Profile from '../pages/Profile';
+import Settings from '../pages/Settings';
+import Calendar from '../pages/Calendar';
 
-const AppRoutes: React.FC = () => {
+const AppRoutes = () => {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/" element={<ProtectedRoute><DashboardHome /></ProtectedRoute>} />
-      <Route path="/manage" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/tasks" element={<ProtectedRoute><TaskSystem /></ProtectedRoute>} />
-      <Route path="/social" element={<ProtectedRoute><Social /></ProtectedRoute>} />
-      <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* Protected routes */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/setup" element={
+        <ProtectedRoute>
+          <SetupPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/calendar" element={
+        <ProtectedRoute>
+          <Calendar />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 };

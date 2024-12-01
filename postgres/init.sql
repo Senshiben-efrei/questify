@@ -32,70 +32,103 @@ CREATE TABLE projects (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create enum types
-CREATE TYPE task_type AS ENUM ('STANDALONE', 'PLACEHOLDER', 'SUB_TASK');
+-- Create enum for evaluation method
 CREATE TYPE evaluation_method AS ENUM ('YES_NO', 'NUMERIC');
 
--- Tasks table
-CREATE TABLE tasks (
+-- Routines table (formerly tasks)
+CREATE TABLE routines (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     description TEXT,
     
-    -- Task type and evaluation
-    task_type task_type NOT NULL,
-    evaluation_method evaluation_method,
-    target_value FLOAT,
-    
-    -- Timing and scheduling
-    execution_time INTEGER,  -- in minutes
+    -- Scheduling
+    is_recurring BOOLEAN DEFAULT false,
+    frequency VARCHAR(50),
     start_date TIMESTAMP WITH TIME ZONE,
     end_date TIMESTAMP WITH TIME ZONE,
     
-    -- Recurrence
-    is_recurring BOOLEAN DEFAULT false,
-    frequency VARCHAR(50),
-    
-    -- Relations
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-    area_id UUID REFERENCES areas(id) ON DELETE CASCADE,
-    
-    -- Queue for placeholder tasks
-    queue JSONB DEFAULT '{}',
+    -- Queue for tasks
+    queue JSONB NOT NULL DEFAULT '{"iterations": [], "rotation_type": "sequential"}',
     
     -- Timestamps
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-    -- Constraints
-    CONSTRAINT check_project_or_area CHECK (NOT (project_id IS NOT NULL AND area_id IS NOT NULL)),
-    CONSTRAINT check_placeholder_queue CHECK (
-        (task_type != 'PLACEHOLDER') OR (task_type = 'PLACEHOLDER' AND queue IS NOT NULL)
+    -- Queue validation
+    CONSTRAINT check_queue_structure CHECK (
+        (queue IS NOT NULL) AND
+        (jsonb_typeof(queue->'iterations') = 'array') AND
+        (jsonb_typeof(queue->'rotation_type') = 'string')
     ),
-    CONSTRAINT check_sub_task_timing CHECK (
-        (task_type != 'SUB_TASK') OR 
-        (task_type = 'SUB_TASK' AND execution_time IS NULL AND start_date IS NULL AND end_date IS NULL)
-    ),
-    CONSTRAINT check_numeric_target CHECK (
-        (evaluation_method != 'NUMERIC') OR (evaluation_method = 'NUMERIC' AND target_value IS NOT NULL)
+    
+    -- Queue items validation
+    CONSTRAINT check_queue_items CHECK (
+        jsonb_array_length(queue->'iterations') = 0 
+        OR NOT EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(queue->'iterations') iterations,
+                 jsonb_array_elements(iterations->'items') item
+            WHERE NOT (
+                jsonb_typeof(item->>'id') = 'string' 
+                AND jsonb_typeof(item->>'name') = 'string'
+                AND (
+                    (
+                        item->>'type' = 'TASK' 
+                        AND jsonb_typeof(item->'evaluation_method') = 'string'
+                        AND (
+                            (item->>'evaluation_method' = 'YES_NO')
+                            OR (
+                                item->>'evaluation_method' = 'NUMERIC'
+                                AND jsonb_typeof(item->'target_value') = 'number'
+                            )
+                        )
+                        AND (
+                            NOT (item->>'has_specific_time')::boolean
+                            OR (
+                                jsonb_typeof(item->'execution_time') = 'string'
+                                AND jsonb_typeof(item->'duration') = 'number'
+                            )
+                        )
+                    )
+                    OR (
+                        item->>'type' = 'COOLDOWN'
+                        AND jsonb_typeof(item->'duration') = 'string'
+                        AND jsonb_typeof(item->'description') = 'string'
+                    )
+                )
+            )
+        )
     )
 );
 
--- Task instances table
-CREATE TABLE task_instances (
+-- Routine instances table
+CREATE TABLE routine_instances (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    status VARCHAR(20) DEFAULT 'pending',
-    progress INTEGER DEFAULT 0,
-    due_date TIMESTAMP WITH TIME ZONE,
-    completion_date TIMESTAMP WITH TIME ZONE,
+    routine_id UUID NOT NULL REFERENCES routines(id) ON DELETE CASCADE,
     iteration_position INTEGER DEFAULT 0,
-    parent_instance_id UUID REFERENCES task_instances(id) ON DELETE CASCADE,
+    due_date TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Trigger to update updated_at timestamp
+-- Task instances table (for tasks within routine instances)
+CREATE TABLE task_instances (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    routine_instance_id UUID NOT NULL REFERENCES routine_instances(id) ON DELETE CASCADE,
+    task_id VARCHAR(100) NOT NULL, -- References the task ID in the routine's queue
+    name VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    progress INTEGER DEFAULT 0,
+    evaluation_method evaluation_method NOT NULL,
+    target_value FLOAT,
+    execution_time VARCHAR(5), -- HH:MM format
+    duration INTEGER, -- in minutes
+    completion_date TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Trigger to update updated_at column
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -120,8 +153,13 @@ CREATE TRIGGER update_projects_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_tasks_updated_at
-    BEFORE UPDATE ON tasks
+CREATE TRIGGER update_routines_updated_at
+    BEFORE UPDATE ON routines
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_routine_instances_updated_at
+    BEFORE UPDATE ON routine_instances
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 

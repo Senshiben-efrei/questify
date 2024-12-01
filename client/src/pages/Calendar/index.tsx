@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   format, 
   addMonths, 
@@ -10,12 +10,16 @@ import {
   isSameDay,
   startOfWeek,
   endOfWeek,
-  addDays
+  addDays,
+  addMinutes,
+  parse
 } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import PageContainer from '../../components/PageContainer';
 import EventDetailsModal from '../../components/Calendar/EventDetailsModal';
 import DayEventsModal from '../../components/Calendar/DayEventsModal';
+import { routineService } from '../../services/routineService';
+import { RoutineInstance, TaskInstance } from '../../types/routine';
 
 interface Event {
   id: string;
@@ -49,105 +53,6 @@ const HOURS = Array.from({ length: 24 }, (_, i) => {
     return { display: `${hour - 12}:00 pm`, value: hour };
   }
 });
-
-const WEEK_EVENTS: WeekEvent[] = [
-  {
-    id: '1',
-    title: 'Morning Workout',
-    startTime: '07:00',
-    endTime: '08:00',
-    status: 'done',
-    date: 'Nov 18, 2024'
-  },
-  {
-    id: '2',
-    title: 'Team Meeting',
-    startTime: '10:00',
-    endTime: '11:00',
-    status: 'done',
-    date: 'Nov 18, 2024'
-  },
-  {
-    id: '3',
-    title: 'Project Deadline',
-    startTime: '09:00',
-    endTime: '10:00',
-    status: 'done',
-    date: 'Nov 19, 2024'
-  },
-  {
-    id: '4',
-    title: 'Code Review',
-    startTime: '14:00',
-    endTime: '15:00',
-    status: 'due',
-    date: 'Nov 19, 2024'
-  },
-  {
-    id: '5',
-    title: 'Daily Standup',
-    startTime: '09:00',
-    endTime: '09:30',
-    status: 'pending',
-    date: 'Nov 20, 2024'
-  },
-  {
-    id: '6',
-    title: 'Client Meeting',
-    startTime: '11:00',
-    endTime: '12:00',
-    status: 'pending',
-    date: 'Nov 20, 2024'
-  },
-  {
-    id: '7',
-    title: 'Team Lunch',
-    startTime: '12:30',
-    endTime: '13:30',
-    status: 'pending',
-    date: 'Nov 20, 2024'
-  },
-  {
-    id: '8',
-    title: 'Sprint Planning',
-    startTime: '10:00',
-    endTime: '11:30',
-    status: 'upcoming',
-    date: 'Nov 21, 2024'
-  },
-  {
-    id: '9',
-    title: 'Training Session',
-    startTime: '14:00',
-    endTime: '15:30',
-    status: 'upcoming',
-    date: 'Nov 21, 2024'
-  },
-  {
-    id: '10',
-    title: 'Product Demo',
-    startTime: '11:00',
-    endTime: '12:00',
-    status: 'upcoming',
-    date: 'Nov 22, 2024'
-  },
-  {
-    id: '11',
-    title: 'Team Building',
-    startTime: '15:00',
-    endTime: '17:00',
-    status: 'upcoming',
-    date: 'Nov 22, 2024'
-  },
-  {
-    id: '12',
-    title: 'Weekend Planning',
-    startTime: '10:00',
-    endTime: '11:00',
-    status: 'upcoming',
-    date: 'Nov 23, 2024'
-  }
-];
 
 // Add type for event time
 interface EventTime {
@@ -277,108 +182,145 @@ const getPriorityStatusColor = (events: Event[], date: string) => {
   return '';
 };
 
+// Helper function to determine task status
+const getTaskStatus = (task: TaskInstance, dueDate: string): 'done' | 'due' | 'pending' | 'upcoming' => {
+  if (task.status === 'completed') return 'done';
+  
+  const today = new Date();
+  const taskDate = new Date(dueDate);
+  taskDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  if (taskDate > today) return 'upcoming';
+  if (taskDate < today) return 'due';
+  return 'pending';
+};
+
+// Add helper function to calculate event height
+const calculateEventHeight = (startTime: string, duration: number): { height: string, top: string } => {
+  const start = parseTime(startTime);
+  const pixelsPerMinute = 112 / 60; // Based on h-28 (112px) per hour
+  const heightInPixels = duration * pixelsPerMinute;
+  const topOffset = (start.minute * pixelsPerMinute);
+
+  return {
+    height: `${heightInPixels}px`,
+    top: `${topOffset}px`
+  };
+};
+
+// Add mobile height calculation
+const calculateMobileEventHeight = (startTime: string, duration: number): { height: string, top: string } => {
+  const start = parseTime(startTime);
+  const pixelsPerMinute = 80 / 60; // Based on h-20 (80px) per hour
+  const heightInPixels = duration * pixelsPerMinute;
+  const topOffset = (start.minute * pixelsPerMinute);
+
+  return {
+    height: `${heightInPixels}px`,
+    top: `${topOffset}px`
+  };
+};
+
+// Add helper function to calculate duration in minutes
+const getDurationInMinutes = (startTime: string, endTime: string): number => {
+  const start = parseTime(startTime);
+  const end = parseTime(endTime);
+  
+  const startMinutes = start.hour * 60 + start.minute;
+  const endMinutes = end.hour * 60 + end.minute;
+  
+  return endMinutes - startMinutes;
+};
+
 const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<ViewType>('week');
-  const [events] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'Morning Workout',
-      date: 'Nov 18, 2024',
-      time: '07:00 - 08:00',
-      description: 'Daily exercise routine - Completed',
-      status: 'done'
-    },
-    {
-      id: '2',
-      title: 'Team Meeting',
-      date: 'Nov 18, 2024',
-      time: '10:00 - 11:00',
-      description: 'Weekly team sync - Completed',
-      status: 'done'
-    },
-    {
-      id: '3',
-      title: 'Project Deadline',
-      date: 'Nov 19, 2024',
-      time: '09:00 - 10:00',
-      description: 'Submit final project deliverables',
-      status: 'done'
-    },
-    {
-      id: '4',
-      title: 'Code Review',
-      date: 'Nov 19, 2024',
-      time: '14:00 - 15:00',
-      description: 'Review pull requests for the new feature',
-      status: 'due'
-    },
-    {
-      id: '5',
-      title: 'Daily Standup',
-      date: 'Nov 20, 2024',
-      time: '09:00 - 09:30',
-      description: 'Daily team status update',
-      status: 'pending'
-    },
-    {
-      id: '6',
-      title: 'Client Meeting',
-      date: 'Nov 20, 2024',
-      time: '11:00 - 12:00',
-      description: 'Project progress review with client',
-      status: 'pending'
-    },
-    {
-      id: '7',
-      title: 'Team Lunch',
-      date: 'Nov 20, 2024',
-      time: '12:30 - 13:30',
-      description: 'Monthly team lunch',
-      status: 'pending'
-    },
-    {
-      id: '8',
-      title: 'Sprint Planning',
-      date: 'Nov 21, 2024',
-      time: '10:00 - 11:30',
-      description: 'Plan next sprint tasks and goals',
-      status: 'upcoming'
-    },
-    {
-      id: '9',
-      title: 'Training Session',
-      date: 'Nov 21, 2024',
-      time: '14:00 - 15:30',
-      description: 'New framework training',
-      status: 'upcoming'
-    },
-    {
-      id: '10',
-      title: 'Product Demo',
-      date: 'Nov 22, 2024',
-      time: '11:00 - 12:00',
-      description: 'Demo new features to stakeholders',
-      status: 'upcoming'
-    },
-    {
-      id: '11',
-      title: 'Team Building',
-      date: 'Nov 22, 2024',
-      time: '15:00 - 17:00',
-      description: 'Team building activities',
-      status: 'upcoming'
-    },
-    {
-      id: '12',
-      title: 'Weekend Planning',
-      date: 'Nov 23, 2024',
-      time: '10:00 - 11:00',
-      description: 'Plan weekend activities',
-      status: 'upcoming'
+  const [instances, setInstances] = useState<RoutineInstance[]>([]);
+
+  // Convert task instances to calendar events
+  const convertTasksToEvents = (instances: RoutineInstance[]): Event[] => {
+    return instances.flatMap(instance => 
+      instance.task_instances
+        .filter(task => task.execution_time && task.duration)
+        .map(task => {
+          const executionTime = task.execution_time!;
+          const duration = task.duration || 0;
+          
+          const endTime = format(
+            addMinutes(parse(executionTime, 'HH:mm', new Date()), duration),
+            'HH:mm'
+          );
+
+          return {
+            id: task.id,
+            title: task.name,
+            date: format(new Date(instance.due_date), 'MMM d, yyyy'),
+            time: `${executionTime} - ${endTime}`,
+            description: `Part of routine: ${instance.routine_name}`,
+            status: getTaskStatus(task, instance.due_date)
+          };
+        })
+    );
+  };
+
+  // Convert task instances to week events
+  const convertTasksToWeekEvents = (instances: RoutineInstance[]): WeekEvent[] => {
+    return instances.flatMap(instance => 
+      instance.task_instances
+        .filter(task => task.execution_time && task.duration)
+        .map(task => {
+          const executionTime = task.execution_time!;
+          const duration = task.duration || 0;
+          
+          const endTime = format(
+            addMinutes(parse(executionTime, 'HH:mm', new Date()), duration),
+            'HH:mm'
+          );
+
+          return {
+            id: task.id,
+            title: task.name,
+            startTime: executionTime,
+            endTime,
+            status: getTaskStatus(task, instance.due_date),
+            date: format(new Date(instance.due_date), 'MMM d, yyyy')
+          };
+        })
+    );
+  };
+
+  // Load instances for the current month/week
+  const loadInstances = async (start: Date, end: Date) => {
+    try {
+      const response = await routineService.getInstancesForDateRange(
+        format(start, 'yyyy-MM-dd'),
+        format(end, 'yyyy-MM-dd')
+      );
+      console.log('Loaded instances:', response.data);
+      setInstances(response.data);
+    } catch (error) {
+      console.error('Failed to load instances:', error);
     }
-  ]);
+  };
+
+  // Update useEffect to load instances when date changes
+  useEffect(() => {
+    if (currentView === 'month') {
+      const start = startOfMonth(currentDate);
+      const end = endOfMonth(currentDate);
+      loadInstances(start, end);
+    } else {
+      const start = startOfWeek(currentDate);
+      const end = endOfWeek(currentDate);
+      loadInstances(start, end);
+    }
+  }, [currentDate, currentView]);
+
+  // Replace hardcoded events with converted task instances
+  const events = useMemo(() => convertTasksToEvents(instances), [instances]);
+  const weekEvents = useMemo(() => convertTasksToWeekEvents(instances), [instances]);
 
   const timeGridRef = React.useRef<HTMLDivElement>(null);
   const [selectedEvent, setSelectedEvent] = useState<(Event | WeekEvent) | null>(null);
@@ -415,28 +357,6 @@ const Calendar: React.FC = () => {
 
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
-  };
-
-  const renderEvent = (event: WeekEvent, day: Date) => {
-    const statusClasses = getStatusClasses(event.status);
-
-    return (
-      <div 
-        key={event.id}
-        className={`rounded p-1.5 border-l-2 overflow-hidden ${statusClasses} mt-1 mx-1 cursor-pointer hover:opacity-80`}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleEventClick(event);
-        }}
-      >
-        <p className="text-xs font-normal text-base-content mb-px truncate">
-          {event.title}
-        </p>
-        <p className="text-xs font-semibold">
-          {event.startTime} - {event.endTime}
-        </p>
-      </div>
-    );
   };
 
   const renderWeekView = () => {
@@ -497,7 +417,7 @@ const Calendar: React.FC = () => {
                         transition-all hover:bg-base-200 relative
                         ${isSameDay(day, today) ? 'bg-base-content/5' : ''}`}
                     >
-                      {WEEK_EVENTS
+                      {weekEvents
                         .filter(event => 
                           isEventInTimeSlot(event, hour24) && 
                           event.date === format(day, 'MMM d, yyyy')
@@ -539,12 +459,12 @@ const Calendar: React.FC = () => {
                     key={display}
                     className="w-full h-20 border-b border-base-300 relative"
                   >
-                    {WEEK_EVENTS
+                    {weekEvents
                       .filter(event => 
                         isEventInTimeSlot(event, hour24) && 
                         event.date === format(selectedWeekDay, 'MMM d, yyyy')
                       )
-                      .map(event => renderEvent(event, selectedWeekDay))}
+                      .map(event => renderEvent(event, selectedWeekDay, true))}
                   </div>
                 );
               })}
@@ -691,6 +611,41 @@ const Calendar: React.FC = () => {
   useEffect(() => {
     setSelectedWeekDay(currentDate);
   }, [currentDate]);
+
+  useEffect(() => {
+    console.log('Week Events:', weekEvents);
+  }, [weekEvents]);
+
+  // Move renderEvent inside the component
+  const renderEvent = (event: WeekEvent, day: Date, isMobile: boolean = false) => {
+    const statusClasses = getStatusClasses(event.status);
+    const { height, top } = isMobile ? 
+      calculateMobileEventHeight(event.startTime, getDurationInMinutes(event.startTime, event.endTime)) :
+      calculateEventHeight(event.startTime, getDurationInMinutes(event.startTime, event.endTime));
+
+    return (
+      <div 
+        key={event.id}
+        className={`absolute left-0 right-0 mx-1 rounded p-1.5 border-l-2 overflow-hidden ${statusClasses} cursor-pointer hover:opacity-80`}
+        style={{
+          height,
+          top,
+          zIndex: 10
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEventClick(event);
+        }}
+      >
+        <p className="text-xs font-normal text-base-content mb-px truncate">
+          {event.title}
+        </p>
+        <p className="text-xs font-semibold">
+          {event.startTime} - {event.endTime}
+        </p>
+      </div>
+    );
+  };
 
   return (
     <PageContainer>

@@ -2,11 +2,11 @@ from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from ..database import SessionLocal
-from .instance_generator import TaskInstanceGenerator
+from .instance_generator import RoutineInstanceGenerator
 from ..models import User
 
 async def generate_daily_instances(_: int = None):
-    """Generate instances for all users at 6 PM"""
+    """Generate routine instances for all users at 6 PM"""
     db = SessionLocal()
     try:
         # Get all users
@@ -16,7 +16,7 @@ async def generate_daily_instances(_: int = None):
         target_date = datetime.now().date() + timedelta(days=1)
         
         for user in users:
-            generator = TaskInstanceGenerator(db)
+            generator = RoutineInstanceGenerator(db)
             generator.generate_instances_for_user(user.id, target_date)
             
     finally:
