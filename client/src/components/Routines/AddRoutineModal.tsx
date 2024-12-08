@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import { Area } from '../../types/area';
 import { Project } from '../../types/project';
@@ -33,6 +33,27 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setIsRecurring(false);
+    setFrequency('');
+    setStartDate('');
+    setEndDate('');
+    setQueue({
+      iterations: [],
+      rotation_type: 'sequential'
+    });
+    setError('');
+    setLoading(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -60,6 +81,7 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({
 
     try {
       await onSubmit(routineData);
+      resetForm();
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to create routine');

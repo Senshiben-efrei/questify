@@ -6,7 +6,12 @@ from datetime import timedelta
 from ..database import get_db
 from ..models import User
 from ..schemas import UserCreate, User as UserSchema
-from .utils import get_password_hash, verify_password, create_access_token
+from .utils import (
+    get_password_hash, 
+    verify_password, 
+    create_access_token,
+    get_current_user
+)
 from ..config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -69,3 +74,8 @@ async def login(
             "email": user.email
         }
     } 
+
+@router.get("/verify")
+async def verify_token(current_user: User = Depends(get_current_user)):
+    """Verify token is valid"""
+    return {"status": "valid", "user": current_user} 

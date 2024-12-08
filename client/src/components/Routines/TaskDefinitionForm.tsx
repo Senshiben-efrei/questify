@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TaskDefinition } from '../../types/routine';
 import { Area } from '../../types/area';
 import { Project } from '../../types/project';
@@ -18,10 +18,28 @@ const TaskDefinitionForm: React.FC<TaskDefinitionFormProps> = ({
   onChange,
   onRemove
 }) => {
+  // Reset project when area changes
+  useEffect(() => {
+    if (task.area_id && task.project_id) {
+      const projectExists = projects.some(
+        p => p.id === task.project_id && p.area_id === task.area_id
+      );
+      if (!projectExists) {
+        onChange({ ...task, project_id: undefined });
+      }
+    }
+  }, [task.area_id, projects]);
+
   const handleChange = (field: keyof TaskDefinition, value: any) => {
-    onChange({ ...task, [field]: value });
+    if (field === 'area_id') {
+      // When area changes, reset project
+      onChange({ ...task, area_id: value, project_id: undefined });
+    } else {
+      onChange({ ...task, [field]: value });
+    }
   };
 
+  // Filter projects by selected area
   const filteredProjects = projects.filter(
     project => project.area_id === task.area_id
   );
@@ -54,7 +72,47 @@ const TaskDefinitionForm: React.FC<TaskDefinitionFormProps> = ({
         />
       </div>
 
-      {/* Evaluation Method */}
+      {/* Area and Project Selection */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">Area</span>
+          </label>
+          <select
+            className="select select-bordered"
+            value={task.area_id || ''}
+            onChange={(e) => handleChange('area_id', e.target.value)}
+          >
+            <option value="">Select an area</option>
+            {areas.map(area => (
+              <option key={area.id} value={area.id}>
+                {area.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">Project</span>
+          </label>
+          <select
+            className="select select-bordered"
+            value={task.project_id || ''}
+            onChange={(e) => handleChange('project_id', e.target.value)}
+            disabled={!task.area_id}
+          >
+            <option value="">Select a project</option>
+            {filteredProjects.map(project => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Other task fields... */}
       <div className="form-control">
         <label className="label">
           <span className="label-text">Evaluation Method</span>
@@ -69,7 +127,6 @@ const TaskDefinitionForm: React.FC<TaskDefinitionFormProps> = ({
         </select>
       </div>
 
-      {/* Target Value for Numeric Evaluation */}
       {task.evaluation_method === 'NUMERIC' && (
         <div className="form-control">
           <label className="label">
@@ -86,7 +143,7 @@ const TaskDefinitionForm: React.FC<TaskDefinitionFormProps> = ({
         </div>
       )}
 
-      {/* Specific Time Toggle */}
+      {/* Time Settings */}
       <div className="form-control">
         <label className="label cursor-pointer">
           <span className="label-text">Specific Time</span>
@@ -99,7 +156,6 @@ const TaskDefinitionForm: React.FC<TaskDefinitionFormProps> = ({
         </label>
       </div>
 
-      {/* Time Settings */}
       {task.has_specific_time && (
         <div className="grid grid-cols-2 gap-4">
           <div className="form-control">
@@ -131,47 +187,21 @@ const TaskDefinitionForm: React.FC<TaskDefinitionFormProps> = ({
         </div>
       )}
 
-      {/* Area and Project Selection */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Area</span>
-          </label>
-          <select
-            className="select select-bordered"
-            value={task.area_id || ''}
-            onChange={(e) => {
-              handleChange('area_id', e.target.value);
-              handleChange('project_id', ''); // Reset project when area changes
-            }}
-          >
-            <option value="">Select an area</option>
-            {areas.map(area => (
-              <option key={area.id} value={area.id}>
-                {area.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Project</span>
-          </label>
-          <select
-            className="select select-bordered"
-            value={task.project_id || ''}
-            onChange={(e) => handleChange('project_id', e.target.value)}
-            disabled={!task.area_id}
-          >
-            <option value="">Select a project</option>
-            {filteredProjects.map(project => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Difficulty Selection */}
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">Difficulty</span>
+        </label>
+        <select
+          className="select select-bordered"
+          value={task.difficulty || 'MEDIUM'}
+          onChange={(e) => handleChange('difficulty', e.target.value)}
+        >
+          <option value="TRIVIAL">Trivial</option>
+          <option value="EASY">Easy</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HARD">Hard</option>
+        </select>
       </div>
 
       {/* Remove Button */}

@@ -20,6 +20,7 @@ class User(Base):
 
     # Relationships
     areas = relationship("Area", back_populates="user", cascade="all, delete-orphan")
+    routines = relationship("Routine", back_populates="user", cascade="all, delete-orphan")
 
 class Area(Base):
     __tablename__ = "areas"
@@ -59,6 +60,7 @@ class Routine(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     description = Column(Text)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     
     # Scheduling
     is_recurring = Column(Boolean, default=False)
@@ -78,6 +80,7 @@ class Routine(Base):
 
     # Relationships
     instances = relationship("RoutineInstance", back_populates="routine", cascade="all, delete-orphan")
+    user = relationship("User", back_populates="routines")
 
 class RoutineInstance(Base):
     __tablename__ = "routine_instances"

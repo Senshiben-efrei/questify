@@ -64,6 +64,12 @@ class QueueItemType(str, Enum):
     TASK = "TASK"
     COOLDOWN = "COOLDOWN"
 
+class TaskDifficulty(str, Enum):
+    TRIVIAL = 'TRIVIAL'
+    EASY = 'EASY'
+    MEDIUM = 'MEDIUM'
+    HARD = 'HARD'
+
 # Task Definition Schemas
 class TaskDefinitionBase(BaseModel):
     id: str
@@ -79,6 +85,7 @@ class TaskDefinition(TaskDefinitionBase):
     duration: Optional[int] = None  # minutes
     area_id: Optional[UUID4] = None
     project_id: Optional[UUID4] = None
+    difficulty: TaskDifficulty = TaskDifficulty.MEDIUM
 
     @validator('target_value')
     def validate_target_value(cls, v, values):
@@ -170,6 +177,7 @@ class TaskInstance(BaseModel):
     completion_date: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+    difficulty: TaskDifficulty
 
     class Config:
         from_attributes = True

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime, timezone, timedelta, date
+import json
 
 from ..database import get_db
 from ..models import Routine, RoutineInstance, TaskInstance, User
@@ -14,6 +15,7 @@ from ..schemas import (
 from ..auth.utils import get_current_user
 from .instance_generator import RoutineInstanceGenerator
 from . import jobs
+from ..utils.json_encoder import CustomJSONEncoder
 
 router = APIRouter(prefix="/routines", tags=["Routines"])
 
@@ -21,11 +23,12 @@ router = APIRouter(prefix="/routines", tags=["Routines"])
 async def create_routine(
     routine_data: RoutineCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    # Create routine
-    db_routine = Routine(**routine_data.dict())
+    routine_dict = json.loads(json.dumps(routine_data.dict(), cls=CustomJSONEncoder))
+    routine_dict['user_id'] = current_user.id
     
+    db_routine = Routine(**routine_dict)
     db.add(db_routine)
     db.commit()
     db.refresh(db_routine)
@@ -34,18 +37,19 @@ async def create_routine(
 @router.get("/", response_model=List[RoutineSchema])
 async def get_routines(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    return db.query(Routine).all()
+    return db.query(Routine).filter(Routine.user_id == current_user.id).all()
 
 @router.get("/{routine_id}", response_model=RoutineWithInstances)
 async def get_routine(
     routine_id: UUID,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     routine = db.query(Routine).filter(
-        Routine.id == routine_id
+        Routine.id == routine_id,
+        Routine.user_id == current_user.id
     ).first()
     
     if not routine:
@@ -60,41 +64,36 @@ async def update_routine(
     routine_id: UUID,
     routine_data: RoutineCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    routine = db.query(Routine).filter(
-        Routine.id == routine_id
+    db_routine = db.query(Routine).filter(
+        Routine.id == routine_id,
+        Routine.user_id == current_user.id
     ).first()
     
-    if not routine:
+    if not db_routine:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Routine not found"
         )
     
-    # Update routine fields
-    for key, value in routine_data.dict().items():
-        setattr(routine, key, value)
+    update_data = json.loads(json.dumps(routine_data.dict(), cls=CustomJSONEncoder))
+    for key, value in update_data.items():
+        setattr(db_routine, key, value)
     
-    try:
-        db.commit()
-        db.refresh(routine)
-        return routine
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    db.commit()
+    db.refresh(db_routine)
+    return db_routine
 
 @router.delete("/{routine_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_routine(
     routine_id: UUID,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     routine = db.query(Routine).filter(
-        Routine.id == routine_id
+        Routine.id == routine_id,
+        Routine.user_id == current_user.id
     ).first()
     
     if not routine:
@@ -158,7 +157,6 @@ async def get_instances_for_date(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all routine instances for a specific date"""
     target_datetime = datetime.combine(date, datetime.min.time())
     next_datetime = datetime.combine(date + timedelta(days=1), datetime.min.time())
 
@@ -168,6 +166,7 @@ async def get_instances_for_date(
         selectinload(RoutineInstance.task_instances),
         selectinload(RoutineInstance.routine)
     ).filter(
+        Routine.user_id == current_user.id,
         RoutineInstance.due_date >= target_datetime,
         RoutineInstance.due_date < next_datetime
     ).order_by(
@@ -193,6 +192,7 @@ async def get_instances_for_date_range(
         selectinload(RoutineInstance.task_instances),
         selectinload(RoutineInstance.routine)
     ).filter(
+        Routine.user_id == current_user.id,
         RoutineInstance.due_date >= start_datetime,
         RoutineInstance.due_date < end_datetime
     ).order_by(

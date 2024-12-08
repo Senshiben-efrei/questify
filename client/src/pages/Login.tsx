@@ -32,20 +32,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/auth/login`,
-        new URLSearchParams({
-          username: formData.username,
-          password: formData.password,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-
-      login(response.data.access_token, response.data.user);
+      await login(formData.username, formData.password);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred during login');

@@ -3,6 +3,7 @@ import { Project } from './project';
 
 export type EvaluationMethod = 'YES_NO' | 'NUMERIC';
 export type QueueItemType = 'TASK' | 'COOLDOWN';
+export type TaskDifficulty = 'TRIVIAL' | 'EASY' | 'MEDIUM' | 'HARD';
 
 export interface TaskDefinition {
   id: string;
@@ -16,6 +17,7 @@ export interface TaskDefinition {
   duration?: number;  // minutes
   area_id?: string;
   project_id?: string;
+  difficulty: TaskDifficulty;
 }
 
 export interface CooldownDefinition {
@@ -76,4 +78,5 @@ export interface TaskInstance {
   completion_date?: string;
   created_at: string;
   updated_at: string;
+  difficulty: TaskDifficulty;
 }

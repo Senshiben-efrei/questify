@@ -14,7 +14,6 @@ interface RoutineListProps {
   onAdd: (data: any) => Promise<void>;
   onEdit: (id: string, data: any) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onGenerateInstances: () => Promise<void>;
 }
 
 const RoutineList: React.FC<RoutineListProps> = ({
@@ -23,8 +22,7 @@ const RoutineList: React.FC<RoutineListProps> = ({
   projects = [],
   onAdd,
   onEdit,
-  onDelete,
-  onGenerateInstances
+  onDelete
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -42,15 +40,6 @@ const RoutineList: React.FC<RoutineListProps> = ({
     setIsDeleteModalOpen(true);
   };
 
-  const handleGenerateInstances = async () => {
-    setLoading(true);
-    try {
-      await onGenerateInstances();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -62,14 +51,6 @@ const RoutineList: React.FC<RoutineListProps> = ({
             onClick={() => setIsAddModalOpen(true)}
           >
             Add Routine
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handleGenerateInstances}
-            disabled={loading}
-          >
-            <PlayIcon className="h-5 w-5 mr-2" />
-            {loading ? 'Generating...' : 'Generate Instances'}
           </button>
         </div>
       </div>

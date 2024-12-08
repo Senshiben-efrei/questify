@@ -15,7 +15,8 @@ class RoutineInstanceGenerator:
         
         # Get all recurring routines for user
         routines = self.db.query(Routine).filter(
-            Routine.is_recurring == True
+            Routine.is_recurring == True,
+            Routine.user_id == user_id
         ).all()
 
         # Generate instances for each routine

@@ -14,12 +14,13 @@ import {
   addMinutes,
   parse
 } from 'date-fns';
-import { ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import PageContainer from '../../components/PageContainer';
 import EventDetailsModal from '../../components/Calendar/EventDetailsModal';
 import DayEventsModal from '../../components/Calendar/DayEventsModal';
 import { routineService } from '../../services/routineService';
 import { RoutineInstance, TaskInstance } from '../../types/routine';
+import { toast } from 'react-toastify';
 
 interface Event {
   id: string;
@@ -647,11 +648,61 @@ const Calendar: React.FC = () => {
     );
   };
 
+  const handleGenerateInstances = async () => {
+    try {
+      const result = await routineService.generateInstances();
+      await loadInstances(currentDate, currentDate); // Reload current view
+      toast.success(
+        `Generated instances:\n` +
+        `Today: ${result.data.statistics.today.instances_created} created, ${result.data.statistics.today.instances_skipped} skipped\n` +
+        `Week: ${result.data.statistics.week.instances_created} created, ${result.data.statistics.week.instances_skipped} skipped`
+      );
+    } catch (error) {
+      toast.error('Failed to generate instances');
+      console.error('Error generating instances:', error);
+    }
+  };
+
+  const handleDeleteInstances = async () => {
+    try {
+      const result = await routineService.deleteInstances();
+      await loadInstances(currentDate, currentDate); // Reload current view
+      toast.success(
+        `Deleted ${result.data.deleted.future_instances} future instances and ${result.data.deleted.pending_tasks} pending tasks`
+      );
+    } catch (error) {
+      console.error('Failed to delete instances:', error);
+      toast.error('Failed to delete instances');
+    }
+  };
+
   return (
     <PageContainer>
       <div className="grid grid-cols-12 gap-2 sm:gap-8">
         {/* Events Section */}
         <div className="col-span-12 xl:col-span-3">
+          {/* Instance Management */}
+          <div className="mb-4 flex flex-col gap-2">
+            <button
+              className="btn btn-primary gap-2"
+              onClick={handleGenerateInstances}
+            >
+              <ArrowPathIcon className="h-5 w-5" />
+              Generate Instances
+            </button>
+            <button
+              className="btn btn-error btn-outline gap-2"
+              onClick={() => {
+                if (window.confirm('Are you sure you want to delete all future instances and pending tasks for today?')) {
+                  handleDeleteInstances();
+                }
+              }}
+            >
+              <TrashIcon className="h-5 w-5" />
+              Clear Instances
+            </button>
+          </div>
+
           {/* Today's Events */}
           <div className="mb-8">
             <h2 className="text-xl sm:text-2xl font-bold text-base-content mb-1.5">Today's Events</h2>

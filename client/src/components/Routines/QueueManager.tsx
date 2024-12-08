@@ -5,6 +5,7 @@ import { Area } from '../../types/area';
 import { Project } from '../../types/project';
 import TaskDefinitionForm from './TaskDefinitionForm';
 import CooldownForm from './CooldownForm';
+import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 
 interface QueueManagerProps {
   queue: Queue;
@@ -66,7 +67,8 @@ const QueueManager: React.FC<QueueManagerProps> = ({
       type: 'TASK',
       name: '',
       evaluation_method: 'YES_NO',
-      has_specific_time: false
+      has_specific_time: false,
+      difficulty: 'MEDIUM'
     };
 
     updateIterationItems(iterationId, newTask);
@@ -125,6 +127,39 @@ const QueueManager: React.FC<QueueManagerProps> = ({
     });
   };
 
+  const duplicateIteration = (iteration: QueueIteration) => {
+    const newIteration: QueueIteration = {
+      ...iteration,
+      id: crypto.randomUUID(),
+      position: queue.iterations.length,
+      items: iteration.items.map(item => ({
+        ...item,
+        id: crypto.randomUUID()
+      }))
+    };
+
+    onChange({
+      ...queue,
+      iterations: [...queue.iterations, newIteration]
+    });
+  };
+
+  const duplicateItem = (iterationId: string, item: TaskDefinition | CooldownDefinition) => {
+    const newItem = {
+      ...item,
+      id: crypto.randomUUID()
+    };
+
+    onChange({
+      ...queue,
+      iterations: queue.iterations.map(iteration =>
+        iteration.id === iterationId
+          ? { ...iteration, items: [...iteration.items, newItem] }
+          : iteration
+      )
+    });
+  };
+
   return (
     <div className="space-y-6">
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -152,18 +187,37 @@ const QueueManager: React.FC<QueueManagerProps> = ({
                         <h3 className="text-lg font-semibold">
                           Iteration {index + 1}
                         </h3>
-                        <button
-                          type="button"
-                          className="btn btn-error btn-sm"
-                          onClick={() => removeIteration(iteration.id)}
-                        >
-                          Remove Iteration
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => duplicateIteration(iteration)}
+                            title="Duplicate Iteration"
+                          >
+                            <DocumentDuplicateIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-error btn-sm"
+                            onClick={() => removeIteration(iteration.id)}
+                          >
+                            Remove Iteration
+                          </button>
+                        </div>
                       </div>
 
                       <div className="space-y-4">
                         {iteration.items.map((item) => (
-                          <div key={item.id}>
+                          <div key={item.id} className="relative">
+                            <button
+                              type="button"
+                              className="absolute right-2 top-2 btn btn-ghost btn-sm z-10"
+                              onClick={() => duplicateItem(iteration.id, item)}
+                              title="Duplicate Item"
+                            >
+                              <DocumentDuplicateIcon className="h-4 w-4" />
+                            </button>
+
                             {item.type === 'TASK' ? (
                               <TaskDefinitionForm
                                 task={item as TaskDefinition}
@@ -177,7 +231,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
                             ) : (
                               <CooldownForm
                                 cooldown={item as CooldownDefinition}
-                                onChange={(updatedCooldown: Partial<CooldownDefinition>) =>
+                                onChange={(updatedCooldown) =>
                                   updateItem(iteration.id, item.id, updatedCooldown)
                                 }
                                 onRemove={() => removeItem(iteration.id, item.id)}

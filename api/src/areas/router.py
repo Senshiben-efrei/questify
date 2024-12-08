@@ -16,10 +16,10 @@ async def create_area(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    db_area = Area(
-        **area_data.dict(),
-        user_id=current_user.id
-    )
+    area_dict = area_data.dict()
+    area_dict['user_id'] = current_user.id
+    
+    db_area = Area(**area_dict)
     db.add(db_area)
     db.commit()
     db.refresh(db_area)

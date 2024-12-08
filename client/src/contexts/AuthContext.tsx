@@ -1,63 +1,67 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 interface AuthContextType {
-  user: User | null;
+  user: any;
   token: string | null;
-  login: (token: string, user: User) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for existing auth data on mount
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const initAuth = () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        // If there's an error parsing the user, clear the storage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      if (storedToken && storedUser) {
+        try {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        } catch {
+          handleLogout();
+        }
       }
-    }
-    setIsInitialized(true);
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-  };
-
-  const logout = () => {
+  const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setToken(null);
     setUser(null);
+    setToken(null);
+    navigate('/login');
   };
 
-  if (!isInitialized) {
-    return null; // or a loading spinner
-  }
+  const login = async (username: string, password: string) => {
+    try {
+      const response = await authService.login(username, password);
+      const { access_token, user: userData } = response.data;
+
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setToken(access_token);
+      setUser(userData);
+      navigate('/');
+    } catch (error) {
+      throw error;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout: handleLogout, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -85,6 +85,7 @@ const Register: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Register the user
       await axios.post(
         `${process.env.REACT_APP_API_URL}/auth/register`,
         {
@@ -94,21 +95,8 @@ const Register: React.FC = () => {
         }
       );
 
-      // After successful registration, log in automatically
-      const loginResponse = await axios.post(
-        `${process.env.REACT_APP_API_URL}/auth/login`,
-        new URLSearchParams({
-          username: formData.username,
-          password: formData.password,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-
-      login(loginResponse.data.access_token, loginResponse.data.user);
+      // After successful registration, log in automatically using the auth service
+      await login(formData.username, formData.password);
       navigate('/');
     } catch (err: any) {
       setServerError(

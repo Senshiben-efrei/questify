@@ -10,9 +10,10 @@ import { Routine } from '../types/routine';
 import { Area } from '../types/area';
 import { Project } from '../types/project';
 import { useAuth } from '../contexts/AuthContext';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import AreaList from '../components/Areas/AreaList';
+import ProjectList from '../components/Projects/ProjectList';
 
-const RoutinesPage: React.FC = () => {
+const SetupPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -83,42 +84,73 @@ const RoutinesPage: React.FC = () => {
     }
   };
 
-  const handleGenerateInstances = async () => {
+  const handleAddArea = async (data: any) => {
     try {
-      const result = await routineService.generateInstances();
-      await loadData(); // Reload data after generating instances
-      toast.success(
-        `Generated instances:\n` +
-        `Today: ${result.data.statistics.today.instances_created} created, ${result.data.statistics.today.instances_skipped} skipped\n` +
-        `Week: ${result.data.statistics.week.instances_created} created, ${result.data.statistics.week.instances_skipped} skipped`
-      );
+      const response = await areaService.createArea(data);
+      setAreas(prev => [...prev, response.data]);
+      toast.success('Area created successfully');
     } catch (error) {
-      toast.error('Failed to generate instances');
+      toast.error('Failed to create area');
       throw error;
     }
   };
 
-  const handleUpdateTask = async (instanceId: string, taskId: string, progress: number) => {
+  const handleEditArea = async (id: string, data: any) => {
     try {
-      await routineService.updateTaskInstance(instanceId, taskId, progress);
-      await loadData(); // Reload data to get updated instances
-      toast.success('Task updated successfully');
+      const response = await areaService.updateArea(id, data);
+      setAreas(prev => prev.map(area => 
+        area.id === id ? response.data : area
+      ));
+      toast.success('Area updated successfully');
     } catch (error) {
-      toast.error('Failed to update task');
-      console.error('Error updating task:', error);
+      toast.error('Failed to update area');
+      throw error;
     }
   };
 
-  const handleDeleteInstances = async () => {
+  const handleDeleteArea = async (id: string) => {
     try {
-      const result = await routineService.deleteInstances();
-      await loadData(); // Reload data after deletion
-      toast.success(
-        `Deleted ${result.data.deleted.future_instances} future instances and ${result.data.deleted.pending_tasks} pending tasks`
-      );
+      await areaService.deleteArea(id);
+      setAreas(prev => prev.filter(area => area.id !== id));
+      toast.success('Area deleted successfully');
     } catch (error) {
-      console.error('Failed to delete instances:', error);
-      toast.error('Failed to delete instances');
+      toast.error('Failed to delete area');
+      throw error;
+    }
+  };
+
+  const handleAddProject = async (data: any) => {
+    try {
+      const response = await projectService.createProject(data);
+      setProjects(prev => [...prev, response.data]);
+      toast.success('Project created successfully');
+    } catch (error) {
+      toast.error('Failed to create project');
+      throw error;
+    }
+  };
+
+  const handleEditProject = async (id: string, data: any) => {
+    try {
+      const response = await projectService.updateProject(id, data);
+      setProjects(prev => prev.map(project => 
+        project.id === id ? response.data : project
+      ));
+      toast.success('Project updated successfully');
+    } catch (error) {
+      toast.error('Failed to update project');
+      throw error;
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    try {
+      await projectService.deleteProject(id);
+      setProjects(prev => prev.filter(project => project.id !== id));
+      toast.success('Project deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete project');
+      throw error;
     }
   };
 
@@ -134,36 +166,46 @@ const RoutinesPage: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="space-y-8">
+      <div className="space-y-12">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Routines</h1>
-          <div className="flex gap-2">
-            <button
-              className="btn btn-error btn-outline gap-2"
-              onClick={() => {
-                if (window.confirm('Are you sure you want to delete all future instances and pending tasks for today?')) {
-                  handleDeleteInstances();
-                }
-              }}
-            >
-              <TrashIcon className="h-5 w-5" />
-              Clear Instances
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold">Setup</h1>
         </div>
 
-        <RoutineList
-          routines={routines}
-          areas={areas}
-          projects={projects}
-          onAdd={handleAddRoutine}
-          onEdit={handleEditRoutine}
-          onDelete={handleDeleteRoutine}
-          onGenerateInstances={handleGenerateInstances}
-        />
+        {/* Areas Section */}
+        <section>
+          <AreaList
+            areas={areas}
+            onAdd={handleAddArea}
+            onEdit={handleEditArea}
+            onDelete={handleDeleteArea}
+          />
+        </section>
+
+        {/* Projects Section */}
+        <section>
+          <ProjectList
+            projects={projects}
+            areas={areas}
+            onAdd={handleAddProject}
+            onEdit={handleEditProject}
+            onDelete={handleDeleteProject}
+          />
+        </section>
+
+        {/* Routines Section */}
+        <section>
+          <RoutineList
+            routines={routines}
+            areas={areas}
+            projects={projects}
+            onAdd={handleAddRoutine}
+            onEdit={handleEditRoutine}
+            onDelete={handleDeleteRoutine}
+          />
+        </section>
       </div>
     </PageContainer>
   );
 };
 
-export default RoutinesPage; 
+export default SetupPage; 

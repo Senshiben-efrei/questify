@@ -14,18 +14,18 @@ function App() {
   };
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <ThemeProvider>
           <DragDropContext onDragEnd={onDragEnd}>
             <Layout>
               <AppRoutes />
             </Layout>
           </DragDropContext>
           <ToastContainer />
-        </Router>
-      </ThemeProvider>
-    </AuthProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
