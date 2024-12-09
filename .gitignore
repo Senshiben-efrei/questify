@@ -22,3 +22,7 @@ build/
 
 # System files
 .DS_Store 
+
+# Dockerfiles in all directories
+**/Dockerfile
+**/docker-compose.yml
