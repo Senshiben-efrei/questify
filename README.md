@@ -1,44 +1,105 @@
-# Real-Life RPG - Gamified Self-Improvement App
+# Questify 🎮
 
-Turn your life into an RPG! Real-Life RPG is a gamified self-improvement application that helps you level up your real-world skills and habits through engaging RPG mechanics.
+A gamified task management application that turns your daily tasks into epic quests!
 
-## 🎮 Features
-
-- **Self-Improvement Areas**: Create custom domains (Health, Finance, etc.) to track and level up different aspects of your life
-- **Project Management**: Organize goals into projects within each area
-- **Task System**: 
-  - Single tasks with binary or numerical goals
-  - Placeholder tasks with rotating sub-tasks
-  - Recurring tasks with automatic instance generation
-  - Task Hub for sharing and discovering tasks from other users
-- **RPG Elements**:
-  - Experience Points (XP) for completing tasks
-  - Health Points (HP) system for maintaining streaks
-  - Virtual coin rewards for achievements
-- **Progress Tracking**:
-  - Detailed analytics and insights
-  - Streak monitoring
-  - Level progression visualization
-- **Social Features**:
-  - Friend system
-  - Leaderboards
-  - Collaborative challenges
-  - Task sharing and discovery through the Task Hub
-- **Community Features**:
-  - Browse and import tasks from other users
-  - Share your successful task templates
-  - Rate and comment on shared tasks
-  - Filter tasks by category, popularity, or effectiveness
-
-## 🚀 Getting Started
+## Quick Start 🚀
 
 ### Prerequisites
 
-- Docker
-- Docker Compose
-- Node.js (for local development)
-- Python 3.11+ (for local development)
+- Docker and Docker Compose installed on your machine
+- Git (optional, you can download the files directly)
 
 ### Installation
 
-1. Clone the repository: 
+1. Clone this branch:
+   \`\`\`bash
+   git clone -b composer https://github.com/Senshiben-efrei/Questify.git
+   cd Questify
+   \`\`\`
+
+2. (Optional) Configure environment variables:
+   \`\`\`bash
+   cp .env.example .env
+   # Edit .env with your preferred settings
+   \`\`\`
+
+3. Start the application:
+   \`\`\`bash
+   docker compose up -d
+   \`\`\`
+
+4. Access the application:
+   - Frontend: http://localhost:3000
+   - API Documentation: http://localhost:8000/docs
+
+## Services 🛠️
+
+The application consists of three main services:
+
+- **Frontend** (React): Runs on port 3000
+- **Backend API** (FastAPI): Runs on port 8000
+- **Database** (PostgreSQL): Runs on port 5432
+
+## Environment Variables ⚙️
+
+All services have default values, but you can customize them using a \`.env\` file:
+
+### Database Settings
+- \`POSTGRES_USER\`: Database username (default: postgres)
+- \`POSTGRES_PASSWORD\`: Database password (default: postgres)
+- \`POSTGRES_DB\`: Database name (default: questify)
+
+### API Settings
+- \`API_PORT\`: API port (default: 8000)
+- \`JWT_SECRET\`: Secret key for JWT tokens
+- \`JWT_ALGORITHM\`: JWT algorithm (default: HS256)
+- \`JWT_EXPIRATION_MINUTES\`: Token expiration time (default: 60)
+
+### Client Settings
+- \`CLIENT_PORT\`: Frontend port (default: 3000)
+- \`API_URL\`: Backend API URL (default: http://localhost:8000)
+
+## Troubleshooting 🔧
+
+1. If you can't access the services, check if the ports are available:
+   \`\`\`bash
+   # List all running containers and their ports
+   docker compose ps
+   \`\`\`
+
+2. View logs for any service:
+   \`\`\`bash
+   # View logs for a specific service
+   docker compose logs [service_name]
+   
+   # Example for frontend
+   docker compose logs client
+   \`\`\`
+
+3. Restart services:
+   \`\`\`bash
+   docker compose restart
+   \`\`\`
+
+4. Complete reset:
+   \`\`\`bash
+   docker compose down -v
+   docker compose up -d
+   \`\`\`
+
+## Contributing 🤝
+
+This is the deployment branch. For development:
+
+1. Visit the main repository branch: [Questify Main Branch](https://github.com/Senshiben-efrei/Questify)
+2. Follow the development setup instructions there
+
+## License 📄
+
+This project is licensed under the MIT License.
+
+## Support 💬
+
+If you encounter any issues:
+1. Check the [Issues](https://github.com/Senshiben-efrei/Questify/issues) section
+2. Create a new issue if your problem isn't already reported
