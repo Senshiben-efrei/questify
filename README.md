@@ -1,76 +1,90 @@
-# Questify 🎮
-A gamified task management application that turns your daily tasks into epic quests!
-## Quick Start 🚀
-### Prerequisites
-- Docker and Docker Compose installed on your machine
-- Git (optional, you can download the files directly)
-### Installation
-1. Clone this branch:
-   \`\`\`bash
-   git clone -b composer https://github.com/Senshiben-efrei/questify.git
-   cd Questify
-   \`\`\`
-2. (Optional) Configure environment variables:
-   \`\`\`bash
-   cp .env.example .env
-   # Edit .env with your preferred settings
-   \`\`\`
-3. Start the application:
-   \`\`\`bash
-   docker compose up -d
-   \`\`\`
-4. Access the application:
-   - Frontend: http://localhost:3000
-   - API Documentation: http://localhost:8000/docs
-## Services 🛠️
-The application consists of three main services:
-- **Frontend** (React): Runs on port 3000
-- **Backend API** (FastAPI): Runs on port 8000
-- **Database** (PostgreSQL): Runs on port 5432
-## Environment Variables ⚙️
-All services have default values, but you can customize them using a \`.env\` file:
-### Database Settings
-- \`POSTGRES_USER\`: Database username (default: postgres)
-- \`POSTGRES_PASSWORD\`: Database password (default: postgres)
-- \`POSTGRES_DB\`: Database name (default: questify)
-### API Settings
-- \`API_PORT\`: API port (default: 8000)
-- \`JWT_SECRET\`: Secret key for JWT tokens
-- \`JWT_ALGORITHM\`: JWT algorithm (default: HS256)
-- \`JWT_EXPIRATION_MINUTES\`: Token expiration time (default: 60)
-### Client Settings
-- \`CLIENT_PORT\`: Frontend port (default: 3000)
-- \`API_URL\`: Backend API URL (default: http://localhost:8000)
-## Troubleshooting 🔧
-1. If you can't access the services, check if the ports are available:
-   \`\`\`bash
-   # List all running containers and their ports
-   docker compose ps
-   \`\`\`
-2. View logs for any service:
-   \`\`\`bash
-   # View logs for a specific service
-   docker compose logs [service_name]
-   
-   # Example for frontend
-   docker compose logs client
-   \`\`\`
-3. Restart services:
-   \`\`\`bash
-   docker compose restart
-   \`\`\`
-4. Complete reset:
-   \`\`\`bash
-   docker compose down -v
-   docker compose up -d
-   \`\`\`
-## Contributing 🤝
-This is the deployment branch. For development:
-1. Visit the main repository branch: [Questify Main Branch](https://github.com/Senshiben-efrei/questify)
-2. Follow the development setup instructions there
-## License 📄
-This project is licensed under the MIT License.
-## Support 💬
-If you encounter any issues:
-1. Check the [Issues](https://github.com/Senshiben-efrei/questify/issues) section
-2. Create a new issue if your problem isn't already reported
+# Questify: (Composer branch)Your Life, Gamified 🎮✨
+
+## Transform Self-Improvement into an Epic Journey
+
+Questify is not just another task management app—it's a comprehensive life optimization system that turns personal growth into an engaging, RPG-like experience.
+
+### 🌟 Unique Features That Set Questify Apart
+
+#### 1. Real-Life RPG Progression System
+- **Dynamic Personal Development**: Your life becomes an immersive role-playing game
+- **Holistic Growth Tracking**: Measure progress across multiple life domains
+- **Adaptive Difficulty**: Challenges evolve with your capabilities
+
+#### 2. Revolutionary Routine Management
+- **Unprecedented Routine Flexibility**
+  - Infinitely configurable task sequences
+  - Dynamic queue management
+  - Intelligent task rotation and scheduling
+- **Unique Task Type Support**
+  - Boolean completion tasks
+  - Numeric progress tracking
+  - Cooldown period management
+
+#### 3. Advanced Scoring Mechanism
+- **Comprehensive User Performance Rating (UPR)**
+  - Rewards consistency and challenge-seeking behavior
+  - Multi-dimensional scoring across life areas
+  - Prevents point farming with intelligent design
+- **Competitive Leaderboards**
+  - Peer group rankings
+  - Achievement tiers
+  - Motivational progression system
+
+#### 4. Intelligent Area Management
+- **Flexible Self-Improvement Domains**
+  - Create custom life improvement areas
+  - Track progress with nuanced, forgiving scoring
+- **Holistic Growth Encouragement**
+  - Adaptive difficulty scaling
+  - Motivational progression mechanics
+
+### 🚀 Quick Start Guide
+
+#### Prerequisites
+- Docker
+- Docker Compose
+- Git
+
+#### Installation Steps
+
+```bash
+# Clone the Questify repository
+git clone -b composer https://github.com/Senshiben-efrei/questify.git
+
+# Navigate to project directory
+cd questify 
+
+# Copy environment example and configure
+cp .env.example .env
+# Edit .env file with your specific parameters
+
+# Launch the application
+docker compose up -d
+```
+
+### 💡 Why Questify?
+
+Traditional productivity apps feel like work. Questify transforms self-improvement into an adventure:
+- Every task is a quest
+- Consistency builds your character
+- Progress is visible and rewarding
+
+### 🔜 Roadmap & Vision
+- Enhanced gamification elements
+- Machine learning-powered challenge recommendations
+- Advanced analytics and insights
+- Community challenge modes
+
+### 🤝 Contributing
+Interested in shaping the future of personal development? 
+- Check out our contribution guidelines
+- Join our community discussions
+- Help us level up humanity's potential!
+
+### 📄 License
+[Your License Here]
+
+---
+
+**Disclaimer**: Questify is not just an app. It's a personal growth revolution. 🚀
