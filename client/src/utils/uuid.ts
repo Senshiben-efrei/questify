@@ -3,6 +3,7 @@ declare const global: {
     crypto?: Crypto;
   } | undefined;
   
+  
   // Get the crypto object from window or global scope
   const getCrypto = (): Crypto | undefined => {
     if (typeof window !== 'undefined' && window.crypto) {
