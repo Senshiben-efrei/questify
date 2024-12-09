@@ -12,22 +12,23 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# # Build the application
+# RUN npm run build
 
-# Production stage
-FROM node:20-alpine
+# # Production stage
+# FROM node:20-alpine
 
-WORKDIR /app
+# WORKDIR /app
 
-# Install serve to run the built application
-RUN npm install -g serve
+# # Install serve to run the built application
+# RUN npm install -g serve
 
-# Copy built application from builder stage
-COPY --from=builder /app/build ./build
+# # Copy built application from builder stage
+# COPY --from=builder /app/build ./build
 
 # Expose port 3000
 EXPOSE 3000
 
 # Start production server
-CMD ["serve", "-s", "build", "-l", "3000"] 
+# CMD ["serve", "-s", "build", "-l", "3000"] 
+CMD ["npm", "start"] 
