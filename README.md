@@ -1,44 +1,88 @@
-# Real-Life RPG - Gamified Self-Improvement App
+# Questify: Your Life, Gamified 🎮✨
 
-Turn your life into an RPG! Real-Life RPG is a gamified self-improvement application that helps you level up your real-world skills and habits through engaging RPG mechanics.
+## Transform Self-Improvement into an Epic Journey
 
-## 🎮 Features
+Questify is not just another task management app—it's a comprehensive life optimization system that turns personal growth into an engaging, RPG-like experience.
 
-- **Self-Improvement Areas**: Create custom domains (Health, Finance, etc.) to track and level up different aspects of your life
-- **Project Management**: Organize goals into projects within each area
-- **Task System**: 
-  - Single tasks with binary or numerical goals
-  - Placeholder tasks with rotating sub-tasks
-  - Recurring tasks with automatic instance generation
-  - Task Hub for sharing and discovering tasks from other users
-- **RPG Elements**:
-  - Experience Points (XP) for completing tasks
-  - Health Points (HP) system for maintaining streaks
-  - Virtual coin rewards for achievements
-- **Progress Tracking**:
-  - Detailed analytics and insights
-  - Streak monitoring
-  - Level progression visualization
-- **Social Features**:
-  - Friend system
-  - Leaderboards
-  - Collaborative challenges
-  - Task sharing and discovery through the Task Hub
-- **Community Features**:
-  - Browse and import tasks from other users
-  - Share your successful task templates
-  - Rate and comment on shared tasks
-  - Filter tasks by category, popularity, or effectiveness
+### 🌟 Unique Features That Set Questify Apart
 
-## 🚀 Getting Started
+#### 1. Real-Life RPG Progression System
+- **Dynamic Personal Development**: Your life becomes an immersive role-playing game
+- **Holistic Growth Tracking**: Measure progress across multiple life domains
+- **Adaptive Difficulty**: Challenges evolve with your capabilities
 
-### Prerequisites
+#### 2. Revolutionary Routine Management
+- **Unprecedented Routine Flexibility**
+  - Infinitely configurable task sequences
+  - Dynamic queue management
+  - Intelligent task rotation and scheduling
+- **Unique Task Type Support**
+  - Boolean completion tasks
+  - Numeric progress tracking
+  - Cooldown period management
 
+#### 3. Advanced Scoring Mechanism
+- **Comprehensive User Performance Rating (UPR)**
+  - Rewards consistency and challenge-seeking behavior
+  - Multi-dimensional scoring across life areas
+  - Prevents point farming with intelligent design
+- **Competitive Leaderboards**
+  - Peer group rankings
+  - Achievement tiers
+  - Motivational progression system
+
+#### 4. Intelligent Area Management
+- **Flexible Self-Improvement Domains**
+  - Create custom life improvement areas
+  - Track progress with nuanced, forgiving scoring
+- **Holistic Growth Encouragement**
+  - Adaptive difficulty scaling
+  - Motivational progression mechanics
+
+### 🚀 Quick Start Guide
+
+#### Prerequisites
 - Docker
 - Docker Compose
-- Node.js (for local development)
-- Python 3.11+ (for local development)
+- Git
 
-### Installation
+#### Installation Steps
 
-1. Clone the repository: 
+```bash
+# Clone the Questify repository
+git clone -b composer https://github.com/Senshiben-efrei/questify.git
+
+# Navigate to project directory
+cd questify 
+
+# Edit .env.example file with your specific parameters and change the name of the file to .env
+
+# Launch the application
+docker compose up -d
+```
+
+### 💡 Why Questify?
+
+Traditional productivity apps feel like work. Questify transforms self-improvement into an adventure:
+- Every task is a quest
+- Consistency builds your character
+- Progress is visible and rewarding
+
+### 🔜 Roadmap & Vision
+- Enhanced gamification elements
+- Machine learning-powered challenge recommendations
+- Advanced analytics and insights
+- Community challenge modes
+
+### 🤝 Contributing
+Interested in shaping the future of personal development? 
+- Check out our contribution guidelines
+- Join our community discussions
+- Help us level up humanity's potential!
+
+### 📄 License
+[Your License Here]
+
+---
+
+**Disclaimer**: Questify is not just an app. It's a personal growth revolution. 🚀
