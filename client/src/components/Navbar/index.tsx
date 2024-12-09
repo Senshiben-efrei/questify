@@ -41,7 +41,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           to="/" 
           className="btn btn-ghost text-xl font-bold text-primary normal-case"
         >
-          RPG Life
+          Questify
         </Link>
       </div>
 

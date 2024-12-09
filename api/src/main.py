@@ -12,8 +12,8 @@ from .routines.router import router as routines_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="RPG Life API",
-    description="API for RPG Life - A Gamified Self-Improvement App",
+    title="Questify API",
+    description="API for Questify - A Gamified Self-Improvement App",
     version="1.0.0"
 )
 
@@ -35,7 +35,7 @@ app.include_router(routines_router)
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to RPG Life API",
+        "message": "Welcome to Questify API",
         "docs": "/docs",  # Swagger UI
         "redoc": "/redoc"  # ReDoc UI
     } 

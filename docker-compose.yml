@@ -5,7 +5,7 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    container_name: rpg_life_api
+    container_name: questify_api
     restart: always
     ports:
       - "${API_PORT}:8000"
@@ -21,13 +21,13 @@ services:
       db:
         condition: service_healthy
     networks:
-      - rpg_network
+      - questify_network
 
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: rpg_life_client
+    container_name: questify_client
     restart: always
     ports:
       - "${CLIENT_PORT}:3000"
@@ -40,11 +40,11 @@ services:
     depends_on:
       - api
     networks:
-      - rpg_network
+      - questify_network
 
   db:
     image: postgres:15-alpine
-    container_name: rpg_life_db
+    container_name: questify_db
     restart: always
     ports:
       - "5432:5432"
@@ -62,13 +62,13 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - rpg_network
+      - questify_network
 
 volumes:
   postgres_data:
     name: ${POSTGRES_DATA_VOLUME}
 
 networks:
-  rpg_network:
+  questify_network:
     name: ${NETWORK_NAME}
     driver: bridge
