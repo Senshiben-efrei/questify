@@ -55,9 +55,7 @@ git clone -b composer https://github.com/Senshiben-efrei/questify.git
 # Navigate to project directory
 cd questify 
 
-# Copy environment example and configure
-cp .env.example .env
-# Edit .env file with your specific parameters
+# Edit .env.example file with your specific parameters and change the name of the file to .env
 
 # Launch the application
 docker compose up -d
@@ -83,7 +81,7 @@ Interested in shaping the future of personal development?
 - Help us level up humanity's potential!
 
 ### 📄 License
-[Your License Here]
+MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
