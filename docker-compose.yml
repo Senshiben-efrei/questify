@@ -2,21 +2,18 @@ version: '3.8'
 
 services:
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+    image: ghcr.io/senshiben-efrei/questify/api:latest
     container_name: questify_api
     restart: always
     ports:
-      - "${API_PORT}:8000"
+      - "${API_PORT:-8000}:8000"
     volumes:
-      - ./api/src:/app/src
-      - ./api/logs:/app/logs
+      - api_logs:/app/logs
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_ALGORITHM=${JWT_ALGORITHM}
-      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-questify}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_here}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-60}
     depends_on:
       db:
         condition: service_healthy
@@ -24,17 +21,11 @@ services:
       - questify_network
 
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
+    image: ghcr.io/senshiben-efrei/questify/client:latest
     container_name: questify_client
     restart: always
     ports:
-      - "${CLIENT_PORT}:3000"
-    volumes:
-      - ./client/src:/app/src
-      - ./client/public:/app/public
-      - /app/node_modules
+      - "${CLIENT_PORT:-3000}:3000"
     environment:
       - REACT_APP_API_URL=${API_URL:-http://localhost:8000}
     depends_on:
@@ -50,14 +41,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./postgres/backups:/backups
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-questify}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -66,9 +55,11 @@ services:
 
 volumes:
   postgres_data:
-    name: ${POSTGRES_DATA_VOLUME}
+    name: ${POSTGRES_DATA_VOLUME:-questify_postgres_data}
+  api_logs:
+    name: questify_api_logs
 
 networks:
   questify_network:
-    name: ${NETWORK_NAME}
+    name: ${NETWORK_NAME:-questify_network}
     driver: bridge
