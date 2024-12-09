@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   api:
-    image: ghcr.io/senshiben-efrei/questify/api:latest
+    build:
+      context: https://github.com/Senshiben-efrei/questify.git#main:api
     container_name: questify_api
     restart: always
     ports:
@@ -21,7 +22,8 @@ services:
       - questify_network
 
   client:
-    image: ghcr.io/senshiben-efrei/questify/client:latest
+    build:
+      context: https://github.com/Senshiben-efrei/questify.git#main:client
     container_name: questify_client
     restart: always
     ports:
