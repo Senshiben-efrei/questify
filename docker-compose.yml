@@ -3,7 +3,7 @@ version: '3.8'
 services:
   api:
     build:
-      context: https://github.com/Senshiben-efrei/questify.git#main:api
+      context: https://github.com/senshiben-efrei/questify.git#main:api
     container_name: questify_api
     restart: always
     ports:
@@ -23,7 +23,7 @@ services:
 
   client:
     build:
-      context: https://github.com/Senshiben-efrei/questify.git#main:client
+      context: https://github.com/senshiben-efrei/questify.git#main:client
     container_name: questify_client
     restart: always
     ports:
