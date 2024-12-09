@@ -13,7 +13,7 @@ A gamified task management application that turns your daily tasks into epic que
 
 1. Clone this branch:
    \`\`\`bash
-   git clone -b composer https://github.com/Senshiben-efrei/Questify.git
+   git clone -b composer https://github.com/Senshiben-efrei/questify.git
    cd Questify
    \`\`\`
 
@@ -91,7 +91,7 @@ All services have default values, but you can customize them using a \`.env\` fi
 
 This is the deployment branch. For development:
 
-1. Visit the main repository branch: [Questify Main Branch](https://github.com/Senshiben-efrei/Questify)
+1. Visit the main repository branch: [Questify Main Branch](https://github.com/Senshiben-efrei/questify)
 2. Follow the development setup instructions there
 
 ## License 📄
@@ -101,5 +101,5 @@ This project is licensed under the MIT License.
 ## Support 💬
 
 If you encounter any issues:
-1. Check the [Issues](https://github.com/Senshiben-efrei/Questify/issues) section
+1. Check the [Issues](https://github.com/Senshiben-efrei/questify/issues) section
 2. Create a new issue if your problem isn't already reported
