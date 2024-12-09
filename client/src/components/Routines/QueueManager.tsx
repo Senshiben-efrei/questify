@@ -7,6 +7,14 @@ import TaskDefinitionForm from './TaskDefinitionForm';
 import CooldownForm from './CooldownForm';
 import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 interface QueueManagerProps {
   queue: Queue;
   areas: Area[];
@@ -38,7 +46,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
 
   const addIteration = () => {
     const newIteration: QueueIteration = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       position: queue.iterations.length,
       items: []
     };
@@ -63,7 +71,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
 
   const addTask = (iterationId: string) => {
     const newTask: Partial<TaskDefinition> = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       type: 'TASK',
       name: '',
       evaluation_method: 'YES_NO',
@@ -76,7 +84,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
 
   const addCooldown = (iterationId: string) => {
     const newCooldown: Partial<CooldownDefinition> = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       type: 'COOLDOWN',
       name: '',
       duration: '1d',
@@ -130,11 +138,11 @@ const QueueManager: React.FC<QueueManagerProps> = ({
   const duplicateIteration = (iteration: QueueIteration) => {
     const newIteration: QueueIteration = {
       ...iteration,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       position: queue.iterations.length,
       items: iteration.items.map(item => ({
         ...item,
-        id: crypto.randomUUID()
+        id: generateUUID()
       }))
     };
 
@@ -147,7 +155,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
   const duplicateItem = (iterationId: string, item: TaskDefinition | CooldownDefinition) => {
     const newItem = {
       ...item,
-      id: crypto.randomUUID()
+      id: generateUUID()
     };
 
     onChange({
