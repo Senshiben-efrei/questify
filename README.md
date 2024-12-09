@@ -81,7 +81,7 @@ Interested in shaping the future of personal development?
 - Help us level up humanity's potential!
 
 ### 📄 License
-[Your License Here]
+MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
