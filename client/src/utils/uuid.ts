@@ -1,12 +1,17 @@
+// Define global type for Node.js environment
+declare const global: {
+  crypto?: Crypto;
+} | undefined;
+
 // Get the crypto object from window or global scope
-const getCrypto = (): Crypto => {
+const getCrypto = (): Crypto | undefined => {
   if (typeof window !== 'undefined' && window.crypto) {
     return window.crypto;
   }
-  if (typeof global !== 'undefined' && global.crypto) {
+  if (typeof global !== 'undefined' && global?.crypto) {
     return global.crypto;
   }
-  return null;
+  return undefined;
 };
 
 // Check if crypto.randomUUID is available
@@ -36,7 +41,7 @@ const generateFallbackUUID = () => {
 
 // Export a unified UUID generator function
 export const generateUUID = (): string => {
-  if (hasRandomUUID) {
+  if (hasRandomUUID && cryptoAPI) {
     try {
       return cryptoAPI.randomUUID();
     } catch (e) {
