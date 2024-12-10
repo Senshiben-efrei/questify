@@ -3,14 +3,12 @@ version: '3.8'
 services:
   api:
     build:
-      context: ${API_CONTEXT:-https://github.com/senshiben-efrei/questify.git#main:api}
-      dockerfile: ${DOCKERFILE:-Dockerfile}
+      context: https://github.com/senshiben-efrei/questify.git#main:api
     container_name: questify_api
     restart: always
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
-      - ./api/src:/app/src:delegated
       - api_logs:/app/logs
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-questify}
@@ -25,20 +23,13 @@ services:
 
   client:
     build:
-      context: ${CLIENT_CONTEXT:-https://github.com/senshiben-efrei/questify.git#main:client}
-      dockerfile: ${DOCKERFILE:-Dockerfile}
+      context: https://github.com/senshiben-efrei/questify.git#main:client
     container_name: questify_client
     restart: always
     ports:
       - "${CLIENT_PORT:-3000}:3000"
-    volumes:
-      - ./client/src:/app/src:delegated
-      - ./client/public:/app/public:delegated
-      - client_node_modules:/app/node_modules
     environment:
       - REACT_APP_API_URL=${API_URL:-http://${HOST_IP:-localhost}:8000}
-      - WATCHPACK_POLLING=true
-      - REACT_APP_BUILD_MODE=${BUILD_MODE:-production}
     depends_on:
       - api
     networks:
@@ -69,8 +60,6 @@ volumes:
     name: ${POSTGRES_DATA_VOLUME:-questify_postgres_data}
   api_logs:
     name: questify_api_logs
-  client_node_modules:
-    name: questify_client_node_modules
 
 networks:
   questify_network:

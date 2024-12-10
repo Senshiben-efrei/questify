@@ -11,12 +11,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create src directory and copy files
-RUN mkdir -p /app/src
-COPY src/ /app/src/
-
-# Copy any other necessary files
-COPY *.py .
+# Copy the rest of the application
+COPY . .
 
 # Create logs directory
 RUN mkdir -p /app/logs && chmod 777 /app/logs

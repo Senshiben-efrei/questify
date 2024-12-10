@@ -1,9 +1,5 @@
 # Environment variables
 .env
-docker-compose.override.yml
-
-# Keep Dockerfiles
-!**/Dockerfile*
 
 # Logs
 api/logs/*
