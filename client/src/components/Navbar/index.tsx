@@ -23,6 +23,9 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
     navigate('/login');
   };
 
+  const isDevMode = process.env.REACT_APP_BUILD_MODE === 'development';
+  const appTitle = isDevMode ? 'Dev Mode' : 'Questify';
+
   return (
     <div className="navbar bg-base-100 shadow-md">
       {/* Left section */}
@@ -41,7 +44,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           to="/" 
           className="btn btn-ghost text-xl font-bold text-primary normal-case"
         >
-          Questify
+          {appTitle}
         </Link>
       </div>
 
