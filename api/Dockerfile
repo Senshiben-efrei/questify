@@ -17,5 +17,8 @@ COPY . .
 # Create logs directory
 RUN mkdir -p /app/logs && chmod 777 /app/logs
 
+# Set Python path
+ENV PYTHONPATH=/app
+
 # Command to run the application
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"] 
