@@ -11,14 +11,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Create src directory and copy files
+RUN mkdir -p /app/src
+COPY src/ /app/src/
+
+# Copy any other necessary files
+COPY *.py .
 
 # Create logs directory
 RUN mkdir -p /app/logs && chmod 777 /app/logs
-
-# Set Python path
-ENV PYTHONPATH=/app
 
 # Command to run the application
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"] 
