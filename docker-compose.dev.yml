@@ -1,15 +1,15 @@
 version: '3.8'
-
 services:
   api:
     build:
-      context: https://github.com/senshiben-efrei/questify.git#main:api
+      context: ./api
       dockerfile: Dockerfile
     container_name: questify_api
     restart: always
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
+      - ./api/src:/app/src
       - api_logs:/app/logs
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-questify}
@@ -24,12 +24,16 @@ services:
 
   client:
     build:
-      context: https://github.com/senshiben-efrei/questify.git#main:client
-      dockerfile: Dockerfile
+      context: ./client
+      dockerfile: Dockerfile.dev
     container_name: questify_client
     restart: always
     ports:
       - "${CLIENT_PORT:-3000}:3000"
+    volumes:
+      - ./client/src:/app/src
+      - ./client/public:/app/public
+      - /app/node_modules
     environment:
       - REACT_APP_API_URL=${API_URL:-http://localhost:8000}
     depends_on:
@@ -66,4 +70,4 @@ volumes:
 networks:
   questify_network:
     name: ${NETWORK_NAME:-questify_network}
-    driver: bridge
+    driver: bridge 
