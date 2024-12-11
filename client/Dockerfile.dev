@@ -1,3 +1,4 @@
+# Development stage
 FROM node:20-alpine
 
 WORKDIR /app
@@ -6,15 +7,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install
 
-# Copy source code (will be overridden by volume mount)
+# Copy source files (will be overridden by volume mount in development)
 COPY . .
 
 # Expose port 3000
 EXPOSE 3000
 
-# Start development server with hot reload
-ENV PATH /app/node_modules/.bin:$PATH
-ENV WATCHPACK_POLLING=true
-CMD ["npm", "start"]
+# Start development server
+CMD ["npm", "start"] 
