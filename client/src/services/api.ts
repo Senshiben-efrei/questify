@@ -1,8 +1,11 @@
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+
+if (!process.env.REACT_APP_API_URL) {
+    throw new Error('REACT_APP_API_URL environment variable is not set');
+}
 
 const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+    baseURL: process.env.REACT_APP_API_URL,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -10,8 +13,8 @@ const api = axios.create({
 
 // Add response interceptor
 api.interceptors.response.use(
-    (response) => response,
-    (error) => {
+    (response: AxiosResponse) => response,
+    (error: AxiosError) => {
         if (error.response?.status === 401) {
             // Clear auth data
             localStorage.removeItem('token');
@@ -26,14 +29,14 @@ api.interceptors.response.use(
 
 // Add request interceptor to add token
 api.interceptors.request.use(
-    (config) => {
+    (config: InternalAxiosRequestConfig) => {
         const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
-    (error) => {
+    (error: AxiosError) => {
         return Promise.reject(error);
     }
 );
