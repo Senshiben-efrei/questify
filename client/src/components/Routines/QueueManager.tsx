@@ -6,6 +6,7 @@ import { Project } from '../../types/project';
 import TaskDefinitionForm from './TaskDefinitionForm';
 import CooldownForm from './CooldownForm';
 import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+import { generateUUID } from '../../utils/uuid';
 
 interface QueueManagerProps {
   queue: Queue;
@@ -37,8 +38,8 @@ const QueueManager: React.FC<QueueManagerProps> = ({
   };
 
   const addIteration = () => {
-    const newIteration: QueueIteration = {
-      id: crypto.randomUUID(),
+    const newIteration = {
+      id: generateUUID(),
       position: queue.iterations.length,
       items: []
     };
