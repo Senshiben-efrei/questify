@@ -1,25 +1,27 @@
 # Build stage
+FROM node:20-alpine as build
+
+WORKDIR /app
+
+# Copy package.json first
+COPY package.json ./
+
+# Install dependencies and create package-lock.json
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Development stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy source files
-COPY . .
-
-# Build the application
-RUN npm run build
-
-# Install serve to run the built application
-RUN npm install -g serve
+# Copy dependencies and source from build stage
+COPY --from=build /app ./
 
 # Expose port 3000
 EXPOSE 3000
 
-# Serve the built application
-CMD ["serve", "-s", "build", "-l", "3000"] 
+# Start development server
+CMD ["npm", "start"] 

@@ -6,7 +6,6 @@ import { Project } from '../../types/project';
 import TaskDefinitionForm from './TaskDefinitionForm';
 import CooldownForm from './CooldownForm';
 import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
-import { generateUUID } from '../../utils/uuid';
 
 interface QueueManagerProps {
   queue: Queue;
@@ -39,7 +38,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
 
   const addIteration = () => {
     const newIteration: QueueIteration = {
-      id: generateUUID(),
+      id: crypto.randomUUID(),
       position: queue.iterations.length,
       items: []
     };
@@ -64,7 +63,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
 
   const addTask = (iterationId: string) => {
     const newTask: Partial<TaskDefinition> = {
-      id: generateUUID(),
+      id: crypto.randomUUID(),
       type: 'TASK',
       name: '',
       evaluation_method: 'YES_NO',
@@ -77,7 +76,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
 
   const addCooldown = (iterationId: string) => {
     const newCooldown: Partial<CooldownDefinition> = {
-      id: generateUUID(),
+      id: crypto.randomUUID(),
       type: 'COOLDOWN',
       name: '',
       duration: '1d',
@@ -131,11 +130,11 @@ const QueueManager: React.FC<QueueManagerProps> = ({
   const duplicateIteration = (iteration: QueueIteration) => {
     const newIteration: QueueIteration = {
       ...iteration,
-      id: generateUUID(),
+      id: crypto.randomUUID(),
       position: queue.iterations.length,
       items: iteration.items.map(item => ({
         ...item,
-        id: generateUUID()
+        id: crypto.randomUUID()
       }))
     };
 
@@ -148,7 +147,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({
   const duplicateItem = (iterationId: string, item: TaskDefinition | CooldownDefinition) => {
     const newItem = {
       ...item,
-      id: generateUUID()
+      id: crypto.randomUUID()
     };
 
     onChange({
